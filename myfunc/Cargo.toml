@@ -8,3 +8,4 @@ shopify_rust_function = {path = "../shopify_rust_function"}
 serde = { version = "1.0.13", features = ["derive"] }
 serde_with = "1.13.0"
 serde_json = "1.0"
+graphql_client = "0.11.0"

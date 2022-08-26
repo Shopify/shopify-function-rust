@@ -1,48 +1,72 @@
 use shopify_rust_function::{
-    api::{input, DiscountApplicationStrategy},
-    api::{Discount, Output, Percentage, Target, Value},
-    shopify_function,
+    discount_schema, parse_config, serde, serde::Deserialize, shopify_function,
+};
+
+use graphql_client::GraphQLQuery;
+
+#[derive(GraphQLQuery, Clone, Debug, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+#[graphql(query_path = "./input.graphql", schema_path = "./schema.graphql")]
+struct InputQuery;
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all(deserialize = "camelCase"))]
+struct Config {
+    pub quantity: i64,
+    pub percentage: f64,
+}
+
+static EMPTY_DISCOUNT: discount_schema::Output = discount_schema::Output {
+    discounts: vec![],
+    discount_application_strategy: discount_schema::DiscountApplicationStrategy::First,
 };
 
 #[shopify_function]
-fn function(input: input::Input) -> Result<Output, Box<dyn std::error::Error>> {
-    let config: input::Configuration = input.configuration();
+fn function(
+    input: input_query::ResponseData,
+) -> Result<discount_schema::Output, Box<dyn std::error::Error>> {
+    let config: Config = parse_config(
+        input
+            .discount_node
+            .metafield
+            .as_ref()
+            .map(|m| m.value.as_str()),
+    );
     let cart_lines = input.cart.lines;
 
     if cart_lines.is_empty() || config.percentage == 0.0 {
-        return Ok(Output {
-            discounts: vec![],
-            discount_application_strategy: DiscountApplicationStrategy::First,
-        });
+        return Ok(EMPTY_DISCOUNT.clone());
     }
 
     let mut targets = vec![];
     for line in cart_lines {
         if line.quantity >= config.quantity {
-            targets.push(Target::ProductVariant {
-                id: line.merchandise.id.unwrap_or_default(),
+            targets.push(discount_schema::Target::ProductVariant {
+                id: match line.merchandise {
+                    input_query::InputQueryCartLinesMerchandise::ProductVariant(variant) => {
+                        variant.id
+                    }
+                    _ => continue,
+                },
                 quantity: None,
             });
         }
     }
 
     if targets.is_empty() {
-        return Ok(Output {
-            discounts: vec![],
-            discount_application_strategy: DiscountApplicationStrategy::First,
-        });
+        return Ok(EMPTY_DISCOUNT.clone());
     }
 
-    Ok(Output {
-        discounts: vec![Discount {
+    Ok(discount_schema::Output {
+        discounts: vec![discount_schema::Discount {
             message: None,
             conditions: None,
             targets,
-            value: Value::Percentage(Percentage {
+            value: discount_schema::Value::Percentage(discount_schema::Percentage {
                 value: config.percentage,
             }),
         }],
-        discount_application_strategy: DiscountApplicationStrategy::First,
+        discount_application_strategy: discount_schema::DiscountApplicationStrategy::First,
     })
 }
 
