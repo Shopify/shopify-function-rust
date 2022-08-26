@@ -85,7 +85,7 @@ use serde_with::skip_serializing_none;
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all(serialize = "camelCase"))]
-pub struct FunctionResult {
+pub struct Output {
     pub discount_application_strategy: DiscountApplicationStrategy,
     pub discounts: Vec<Discount>,
 }

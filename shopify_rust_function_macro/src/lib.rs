@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{self, FnArg};
 
 #[proc_macro_attribute]
-pub fn shopify_function(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn shopify_function(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let ast: syn::ItemFn = syn::parse(item).unwrap();
 
     let name = &ast.sig.ident;
@@ -20,6 +20,9 @@ pub fn shopify_function(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     let gen = quote! {
+        use serde::Serialize;
+        use serde_json;
+
         fn main() -> Result<(), Box<dyn std::error::Error>> {
             let input: #input_type = serde_json::from_reader(std::io::BufReader::new(std::io::stdin()))?;
             let mut out = std::io::stdout();

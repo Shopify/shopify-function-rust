@@ -136,6 +136,9 @@ dependencies = [
 name = "shopify_rust_function"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
+ "serde_with",
  "shopify_rust_function_macro",
 ]
 

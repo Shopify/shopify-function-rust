@@ -1,16 +1,16 @@
-use serde::Serialize;
-use shopify_rust_function::shopify_function;
-
-mod api;
-use api::*;
+use shopify_rust_function::{
+    api::{input, DiscountApplicationStrategy},
+    api::{Discount, Output, Percentage, Target, Value},
+    shopify_function,
+};
 
 #[shopify_function]
-fn function(input: input::Input) -> Result<FunctionResult, Box<dyn std::error::Error>> {
+fn function(input: input::Input) -> Result<Output, Box<dyn std::error::Error>> {
     let config: input::Configuration = input.configuration();
     let cart_lines = input.cart.lines;
 
     if cart_lines.is_empty() || config.percentage == 0.0 {
-        return Ok(FunctionResult {
+        return Ok(Output {
             discounts: vec![],
             discount_application_strategy: DiscountApplicationStrategy::First,
         });
@@ -27,13 +27,13 @@ fn function(input: input::Input) -> Result<FunctionResult, Box<dyn std::error::E
     }
 
     if targets.is_empty() {
-        return Ok(FunctionResult {
+        return Ok(Output {
             discounts: vec![],
             discount_application_strategy: DiscountApplicationStrategy::First,
         });
     }
 
-    Ok(FunctionResult {
+    Ok(Output {
         discounts: vec![Discount {
             message: None,
             conditions: None,
