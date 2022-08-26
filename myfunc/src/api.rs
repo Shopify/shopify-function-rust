@@ -54,8 +54,11 @@ pub mod input {
 
     impl input::Input {
         pub fn configuration(&self) -> Configuration {
-            let value: Option<&str> = self.discount_node.metafield
-                    .as_ref().and_then(|metafield| metafield.value.as_deref());
+            let value: Option<&str> = self
+                .discount_node
+                .metafield
+                .as_ref()
+                .and_then(|metafield| metafield.value.as_deref());
             value.map(Configuration::from_str).unwrap_or_default()
         }
     }

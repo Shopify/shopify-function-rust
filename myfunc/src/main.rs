@@ -1,16 +1,10 @@
-use serde::{Serialize};
+use serde::Serialize;
+use shopify_rust_function::shopify_function;
 
 mod api;
 use api::*;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let input: input::Input = serde_json::from_reader(std::io::BufReader::new(std::io::stdin()))?;
-    let mut out = std::io::stdout();
-    let mut serializer = serde_json::Serializer::new(&mut out);
-    function(input)?.serialize(&mut serializer)?;
-    Ok(())
-}
-
+#[shopify_function]
 fn function(input: input::Input) -> Result<FunctionResult, Box<dyn std::error::Error>> {
     let config: input::Configuration = input.configuration();
     let cart_lines = input.cart.lines;
@@ -44,7 +38,9 @@ fn function(input: input::Input) -> Result<FunctionResult, Box<dyn std::error::E
             message: None,
             conditions: None,
             targets,
-            value: Value::Percentage(Percentage { value: config.percentage }),
+            value: Value::Percentage(Percentage {
+                value: config.percentage,
+            }),
         }],
         discount_application_strategy: DiscountApplicationStrategy::First,
     })
@@ -80,9 +76,7 @@ mod tests {
         let value = configuration.map(|x| serde_json::to_string(&x).unwrap());
 
         let discount_node = input::DiscountNode {
-            metafield: Some(input::Metafield {
-                value
-            }),
+            metafield: Some(input::Metafield { value }),
         };
 
         input::Input {
