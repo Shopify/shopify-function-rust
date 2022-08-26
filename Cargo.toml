@@ -1,0 +1,10 @@
+[workspace]
+
+members = [
+    "myfunc",
+]
+
+[profile.release]
+lto = true
+opt-level = 'z'
+strip = true

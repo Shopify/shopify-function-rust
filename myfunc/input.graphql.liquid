@@ -1,0 +1,17 @@
+query Input {
+  cart {
+    lines {
+      quantity
+      merchandise {
+        ...on ProductVariant {
+          id
+        }
+      }
+    }
+  }
+  discountNode {
+    metafield(namespace: "{{ app_name | replace: " ", "-" | downcase }}", key: "function-config") {
+      value
+    }
+  }
+}
