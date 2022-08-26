@@ -79,3 +79,8 @@ pub enum Condition {
 pub enum ConditionTargetType {
     ProductVariant,
 }
+
+pub static EMPTY_DISCOUNT: Output = Output {
+    discounts: vec![],
+    discount_application_strategy: DiscountApplicationStrategy::First,
+};

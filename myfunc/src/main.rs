@@ -1,6 +1,4 @@
-use shopify_rust_function::{
-    discount_schema, parse_config, serde, serde::Deserialize, shopify_function,
-};
+use shopify_rust_function::{discounts, serde, serde::Deserialize, shopify_function};
 
 use graphql_client::GraphQLQuery;
 
@@ -16,16 +14,11 @@ struct Config {
     pub percentage: f64,
 }
 
-static EMPTY_DISCOUNT: discount_schema::Output = discount_schema::Output {
-    discounts: vec![],
-    discount_application_strategy: discount_schema::DiscountApplicationStrategy::First,
-};
-
 #[shopify_function]
 fn function(
     input: input_query::ResponseData,
-) -> Result<discount_schema::Output, Box<dyn std::error::Error>> {
-    let config: Config = parse_config(
+) -> Result<discounts::Output, Box<dyn std::error::Error>> {
+    let config: Config = shopify_rust_function::parse_config(
         input
             .discount_node
             .metafield
@@ -35,13 +28,13 @@ fn function(
     let cart_lines = input.cart.lines;
 
     if cart_lines.is_empty() || config.percentage == 0.0 {
-        return Ok(EMPTY_DISCOUNT.clone());
+        return Ok(discounts::EMPTY_DISCOUNT.clone());
     }
 
     let mut targets = vec![];
     for line in cart_lines {
         if line.quantity >= config.quantity {
-            targets.push(discount_schema::Target::ProductVariant {
+            targets.push(discounts::Target::ProductVariant {
                 id: match line.merchandise {
                     input_query::InputQueryCartLinesMerchandise::ProductVariant(variant) => {
                         variant.id
@@ -54,19 +47,19 @@ fn function(
     }
 
     if targets.is_empty() {
-        return Ok(EMPTY_DISCOUNT.clone());
+        return Ok(discounts::EMPTY_DISCOUNT.clone());
     }
 
-    Ok(discount_schema::Output {
-        discounts: vec![discount_schema::Discount {
+    Ok(discounts::Output {
+        discounts: vec![discounts::Discount {
             message: None,
             conditions: None,
             targets,
-            value: discount_schema::Value::Percentage(discount_schema::Percentage {
+            value: discounts::Value::Percentage(discounts::Percentage {
                 value: config.percentage,
             }),
         }],
-        discount_application_strategy: discount_schema::DiscountApplicationStrategy::First,
+        discount_application_strategy: discounts::DiscountApplicationStrategy::First,
     })
 }
 
