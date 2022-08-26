@@ -253,6 +253,7 @@ dependencies = [
 name = "shopify_rust_function_macro"
 version = "0.1.0"
 dependencies = [
+ "proc-macro2",
  "quote",
  "syn",
 ]
