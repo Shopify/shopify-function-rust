@@ -52,6 +52,8 @@ pub fn input_query(
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(#params)]
+        struct InputQuery;
+
         #ast
     }
     .into();

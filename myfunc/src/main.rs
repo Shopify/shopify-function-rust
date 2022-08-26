@@ -1,8 +1,6 @@
 use shopify_rust_function::{discounts, function_config, input_query, shopify_function, Result};
 
 #[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
-struct InputQuery;
-
 #[function_config]
 #[derive(Default, PartialEq)]
 struct Config {
