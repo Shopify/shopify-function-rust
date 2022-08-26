@@ -1,4 +1,4 @@
-use shopify_rust_function::{discounts, input_query, serde::Deserialize, shopify_function};
+use shopify_rust_function::{discounts, input_query, serde::Deserialize, shopify_function, Result};
 
 #[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
 struct InputQuery;
@@ -10,9 +10,7 @@ struct Config {
 }
 
 #[shopify_function]
-fn function(
-    input: input_query::ResponseData,
-) -> Result<discounts::Output, Box<dyn std::error::Error>> {
+fn function(input: input_query::ResponseData) -> Result<discounts::Output> {
     let config: Config = shopify_rust_function::parse_config(
         input
             .discount_node

@@ -4,6 +4,8 @@ pub use shopify_rust_function_macro::{input_query, shopify_function};
 
 pub mod discounts;
 
+pub type Result<T> = anyhow::Result<T>;
+
 pub fn parse_config<'a, T: Default + serde::Deserialize<'a>>(config: Option<&'a str>) -> T {
     config
         .and_then(|s| serde_json::from_str(s.as_ref()).ok())
