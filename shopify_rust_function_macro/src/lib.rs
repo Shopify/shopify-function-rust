@@ -45,14 +45,27 @@ pub fn input_query(
     attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    // let params = format!("{}", attr);
     let params = TokenStream::from(attr);
     let ast: syn::Item = syn::parse(item).unwrap();
 
     return quote! {
-        #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize)]
+        #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(#params)]
+        #ast
+    }
+    .into();
+}
+
+#[proc_macro_attribute]
+pub fn function_config(
+    _attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let ast: syn::Item = syn::parse(item).unwrap();
+
+    return quote! {
+        #[derive(serde::Serialize, serde::Deserialize)]
         #ast
     }
     .into();

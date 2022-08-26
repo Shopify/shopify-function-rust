@@ -1,9 +1,10 @@
-use shopify_rust_function::{discounts, input_query, serde::Deserialize, shopify_function, Result};
+use shopify_rust_function::{discounts, function_config, input_query, shopify_function, Result};
 
 #[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
 struct InputQuery;
 
-#[derive(Deserialize, Default)]
+#[function_config]
+#[derive(Default, PartialEq)]
 struct Config {
     pub quantity: i64,
     pub percentage: f64,
