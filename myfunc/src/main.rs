@@ -1,8 +1,11 @@
-use shopify_rust_function::{discounts, function_config, input_query, shopify_function, Result};
+use shopify_rust_function::{
+    discounts, input_query,
+    serde::{Deserialize, Serialize},
+    serde_json, shopify_function, Result,
+};
 
 #[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
-#[function_config]
-#[derive(Default, PartialEq)]
+#[derive(Serialize, Deserialize, Default, PartialEq)]
 struct Config {
     pub quantity: i64,
     pub percentage: f64,
@@ -10,13 +13,14 @@ struct Config {
 
 #[shopify_function]
 fn function(input: input_query::ResponseData) -> Result<discounts::Output> {
-    let config: Config = shopify_rust_function::parse_config(
-        input
-            .discount_node
-            .metafield
-            .as_ref()
-            .map(|m| m.value.as_str()),
-    );
+    let config: Config = input
+        .discount_node
+        .metafield
+        .as_ref()
+        .map(|m| serde_json::from_str::<Config>(m.value.as_str()))
+        .transpose()?
+        .unwrap_or_default();
+
     let cart_lines = input.cart.lines;
 
     if cart_lines.is_empty() || config.percentage == 0.0 {

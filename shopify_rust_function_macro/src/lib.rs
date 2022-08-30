@@ -24,9 +24,6 @@ pub fn shopify_function(
     };
 
     let gen = quote! {
-        use serde::Serialize;
-        use serde_json;
-
         fn main() -> Result<()> {
             let input: #input_type = serde_json::from_reader(std::io::BufReader::new(std::io::stdin()))?;
             let mut out = std::io::stdout();
@@ -59,18 +56,5 @@ pub fn input_query(
     .into();
 }
 
-#[proc_macro_attribute]
-pub fn function_config(
-    _attr: proc_macro::TokenStream,
-    item: proc_macro::TokenStream,
-) -> proc_macro::TokenStream {
-    let ast: syn::Item = syn::parse(item).unwrap();
-
-    return quote! {
-        #[derive(serde::Serialize, serde::Deserialize)]
-        #ast
-    }
-    .into();
-}
 #[cfg(test)]
 mod tests {}
