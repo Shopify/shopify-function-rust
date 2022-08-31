@@ -1,5 +1,5 @@
 use super::*;
-use shopify_rust_function::{run_function_with_input, Result};
+use shopify_function::{run_function_with_input, Result};
 
 #[test]
 fn test_discount_with_no_configuration() -> Result<()> {

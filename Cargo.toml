@@ -2,8 +2,8 @@
 
 members = [
     "myfunc",
-    "shopify_rust_function",
-    "shopify_rust_function_macro"
+    "shopify_function",
+    "shopify_function_macro"
 ]
 
 [profile.release]

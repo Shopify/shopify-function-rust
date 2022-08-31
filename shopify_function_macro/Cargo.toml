@@ -1,5 +1,5 @@
 [package]
-name = "shopify_rust_function_macro"
+name = "shopify_function_macro"
 version = "0.1.0"
 edition = "2021"
 

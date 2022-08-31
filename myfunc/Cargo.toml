@@ -4,7 +4,7 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-shopify_rust_function = {path = "../shopify_rust_function"}
+shopify_function = {path = "../shopify_function"}
 serde = { version = "1.0.13", features = ["derive"] }
 serde_with = "1.13.0"
 serde_json = "1.0"

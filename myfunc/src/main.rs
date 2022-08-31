@@ -1,4 +1,4 @@
-use shopify_rust_function::{
+use shopify_function::{
     discounts, input_query,
     serde::{Deserialize, Serialize},
     serde_json, shopify_function, Result,

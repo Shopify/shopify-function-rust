@@ -246,18 +246,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "shopify_rust_function"
+name = "shopify_function"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "serde",
  "serde_json",
  "serde_with",
- "shopify_rust_function_macro",
+ "shopify_function_macro",
 ]
 
 [[package]]
-name = "shopify_rust_function_macro"
+name = "shopify_function_macro"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
@@ -331,5 +331,5 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
- "shopify_rust_function",
+ "shopify_function",
 ]
