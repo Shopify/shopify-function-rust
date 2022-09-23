@@ -2,6 +2,11 @@ query InputQuery {
   cart {
     lines {
       quantity
+      cost {
+        totalAmount {
+          amount
+        }
+      }
       merchandise {
         __typename
         ...on ProductVariant {
