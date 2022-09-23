@@ -1,12 +1,9 @@
 #![allow(dead_code)]
 
-pub type Boolean = bool;
-pub type Float = f64;
-pub type Int = i64;
-pub type ID = String;
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+
+use super::scalars::*;
 
 #[derive(Clone, Debug, Serialize, PartialEq, Deserialize)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "camelCase"))]
