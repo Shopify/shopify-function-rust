@@ -29,7 +29,7 @@ fn test_discount_with_no_configuration() -> Result<()> {
           }
         "#,
     )?;
-    let expected = serde_json::from_str::<discounts::Output>(
+    let expected = serde_json::from_str::<crate::output::FunctionResult>(
         r#"
           {
               "discounts": [],
@@ -73,7 +73,7 @@ fn test_discount_with_configuration() -> Result<()> {
               }
             "#,
     )?;
-    let expected = serde_json::from_str::<discounts::Output>(
+    let expected = serde_json::from_str::<crate::output::FunctionResult>(
         r#"
           {
             "discounts": [{

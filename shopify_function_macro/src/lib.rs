@@ -86,11 +86,20 @@ pub fn input_query(
     return quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
-        #[graphql(#params)]
+        #[graphql(
+            #params,
+            response_derives = "Clone,Debug,PartialEq,Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+        )]
         struct InputQuery;
 
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
-        #[graphql(query_path = "./.output.query", schema_path = #schema_path)]
+        #[graphql(
+            query_path = "./.output.query",
+            schema_path = #schema_path,
+            response_derives = "Clone,Debug,PartialEq,Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+        )]
         struct Output;
 
         #ast

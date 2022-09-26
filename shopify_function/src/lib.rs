@@ -6,12 +6,12 @@ pub mod scalars;
 
 pub type Result<T> = anyhow::Result<T>;
 
-pub fn run_function_with_input<'a, F, P: serde::Deserialize<'a>>(
+pub fn run_function_with_input<'a, F, P: serde::Deserialize<'a>, O>(
     f: F,
     payload: &'a str,
-) -> Result<discounts::Output>
+) -> Result<O>
 where
-    F: Fn(P) -> Result<discounts::Output>,
+    F: Fn(P) -> Result<O>,
 {
     let parsed_payload: P = serde_json::from_str(payload)?;
     f(parsed_payload)
