@@ -1,5 +1,7 @@
 use shopify_function::{
-    discounts, input_query,
+    discounts,
+    scalars::*,
+    input_query,
     serde::{Deserialize, Serialize},
     serde_json, shopify_function, Result,
 };
