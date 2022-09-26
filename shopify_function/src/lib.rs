@@ -2,7 +2,6 @@ pub use serde;
 pub use serde_json;
 pub use shopify_function_macro::{input_query, shopify_function};
 
-pub mod discounts;
 pub mod scalars;
 
 pub type Result<T> = anyhow::Result<T>;

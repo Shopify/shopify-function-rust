@@ -1,5 +1,8 @@
-use proc_macro;
+use std::io::Write;
+use std::path::Path;
+
 use proc_macro2::TokenStream;
+use proc_macro2::TokenTree;
 use quote::quote;
 use syn::{self, FnArg};
 
@@ -37,6 +40,22 @@ pub fn shopify_function(
     gen.into()
 }
 
+fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
+    let attrs: Vec<TokenTree> = attrs.clone().into_iter().collect();
+    let attr_index = attrs
+        .iter()
+        .position(|item| match item {
+            TokenTree::Ident(ident) => ident.to_string().as_str() == attr,
+            _ => false,
+        })
+        .expect(format!("No attribute with name {} found", attr).as_str());
+    let value = attrs
+        .get(attr_index + 2)
+        .expect(format!("No value given for {} attribute", attr).as_str())
+        .to_string();
+    value.as_str()[1..value.len() - 1].to_string()
+}
+
 #[proc_macro_attribute]
 pub fn input_query(
     attr: proc_macro::TokenStream,
@@ -45,11 +64,34 @@ pub fn input_query(
     let params = TokenStream::from(attr);
     let ast: syn::Item = syn::parse(item).unwrap();
 
+    let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let schema_path = extract_attr(&params, "schema_path");
+
+    let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
+    output_query_path.push(".output.query");
+    std::fs::File::create(&output_query_path)
+        .expect("Could not create .output.query")
+        .write_all(
+            r"
+                mutation Output(
+                    $result: FunctionResult!
+                ) {
+                    handleResult(result: $result)
+                }
+            "
+            .as_bytes(),
+        )
+        .expect("Could not write to .output.query");
+
     return quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(#params)]
         struct InputQuery;
+
+        #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
+        #[graphql(query_path = "./.output.query", schema_path = #schema_path)]
+        struct Output;
 
         #ast
     }
