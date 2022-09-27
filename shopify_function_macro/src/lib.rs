@@ -90,6 +90,7 @@ pub fn input_query(
             #params,
             response_derives = "Clone,Debug,PartialEq,Deserialize",
             variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            skip_serializing_none
         )]
         struct InputQuery;
 
@@ -99,6 +100,7 @@ pub fn input_query(
             schema_path = #schema_path,
             response_derives = "Clone,Debug,PartialEq,Deserialize",
             variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            skip_serializing_none
         )]
         struct Output;
 
