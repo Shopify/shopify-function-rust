@@ -1,7 +1,6 @@
 use shopify_function::{
-    discounts,
-    scalars::*,
     input_query,
+    scalars::*,
     serde::{Deserialize, Serialize},
     serde_json, shopify_function, Result,
 };
@@ -14,7 +13,7 @@ struct Config {
 }
 
 #[shopify_function]
-fn function(input: input_query::ResponseData) -> Result<discounts::Output> {
+fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> {
     let config: Config = input
         .discount_node
         .metafield
@@ -26,38 +25,49 @@ fn function(input: input_query::ResponseData) -> Result<discounts::Output> {
     let cart_lines = input.cart.lines;
 
     if cart_lines.is_empty() || config.percentage == 0.0 {
-        return Ok(discounts::EMPTY_DISCOUNT.clone());
+        return Ok(output::FunctionResult {
+            discount_application_strategy: output::DiscountApplicationStrategy::FIRST,
+            discounts: vec![],
+        });
     }
 
     let mut targets = vec![];
     for line in cart_lines {
         if line.quantity >= config.quantity {
-            targets.push(discounts::Target::ProductVariant {
-                id: match line.merchandise {
-                    input_query::InputQueryCartLinesMerchandise::ProductVariant(variant) => {
-                        variant.id
-                    }
-                    _ => continue,
-                },
-                quantity: None,
+            targets.push(output::Target {
+                product_variant: Some(output::ProductVariantTarget {
+                    id: match line.merchandise {
+                        input_query::InputQueryCartLinesMerchandise::ProductVariant(variant) => {
+                            variant.id
+                        }
+                        _ => continue,
+                    },
+                    quantity: None,
+                }),
             });
         }
     }
 
     if targets.is_empty() {
-        return Ok(discounts::EMPTY_DISCOUNT.clone());
+        return Ok(output::FunctionResult {
+            discount_application_strategy: output::DiscountApplicationStrategy::FIRST,
+            discounts: vec![],
+        });
     }
 
-    Ok(discounts::Output {
-        discounts: vec![discounts::Discount {
+    Ok(output::FunctionResult {
+        discounts: vec![output::Discount {
             message: None,
             conditions: None,
             targets,
-            value: discounts::Value::Percentage(discounts::Percentage {
-                value: config.percentage,
-            }),
+            value: output::Value {
+                percentage: Some(output::Percentage {
+                    value: config.percentage.to_string(),
+                }),
+                fixed_amount: None,
+            },
         }],
-        discount_application_strategy: discounts::DiscountApplicationStrategy::First,
+        discount_application_strategy: output::DiscountApplicationStrategy::FIRST,
     })
 }
 

@@ -6,37 +6,45 @@ fn test_discount_with_no_configuration() -> Result<()> {
     let result = run_function_with_input(
         function,
         r#"
-          {
-              "cart": {
-                  "lines": [
-                      {
-                          "quantity": 5,
-                          "merchandise": {
-                              "__typename": "ProductVariant",
-                              "id": "gid://shopify/ProductVariant/0"
-                          }
-                      },
-                      {
-                          "quantity": 1,
-                          "merchandise": {
-                              "__typename": "ProductVariant",
-                              "id": "gid://shopify/ProductVariant/1"
-                          }
-                      }
-                  ]
-              },
-              "discountNode": { "metafield": null }
-          }
+            {
+                "cart": {
+                    "lines": [
+                        {
+                            "cost": {
+                                "totalAmount": {
+                                    "amount": "0"
+                                }
+                            },
+                            "merchandise": {
+                                "__typename": "ProductVariant",
+                                "id": "gid://shopify/ProductVariant/0"
+                            },
+                            "quantity": 5
+                        },
+                        {
+                            "cost": {
+                                "totalAmount": {
+                                    "amount": "0"
+                                }
+                            },
+                            "merchandise": {
+                                "__typename": "ProductVariant",
+                                "id": "gid://shopify/ProductVariant/1"
+                            },
+                            "quantity": 1
+                        }
+                    ]
+                },
+                "discountNode": {
+                    "metafield": null
+                }
+            }
         "#,
     )?;
-    let expected = serde_json::from_str::<discounts::Output>(
-        r#"
-          {
-              "discounts": [],
-              "discountApplicationStrategy": "FIRST"
-          }
-        "#,
-    )?;
+    let expected = crate::output::FunctionResult {
+        discounts: vec![],
+        discount_application_strategy: crate::output::DiscountApplicationStrategy::FIRST,
+    };
     assert_eq!(result, expected);
     Ok(())
 }
@@ -46,46 +54,63 @@ fn test_discount_with_configuration() -> Result<()> {
     let result = run_function_with_input(
         function,
         r#"
-              {
+            {
                 "cart": {
                     "lines": [
                         {
-                            "quantity": 5,
+                            "cost": {
+                                "totalAmount": {
+                                    "amount": "0"
+                                }
+                            },
                             "merchandise": {
                                 "__typename": "ProductVariant",
                                 "id": "gid://shopify/ProductVariant/0"
-                            }
+                            },
+                            "quantity": 5
                         },
                         {
-                            "quantity": 1,
+                            "cost": {
+                                "totalAmount": {
+                                    "amount": "10"
+                                }
+                            },
                             "merchandise": {
                                 "__typename": "ProductVariant",
                                 "id": "gid://shopify/ProductVariant/1"
-                            }
+                            },
+                            "quantity": 1
                         }
                     ]
                 },
                 "discountNode": {
-                  "metafield": {
-                    "value": "{\"quantity\": 5, \"percentage\": 10}"
-                  }
+                    "metafield": {
+                        "value": "{\"quantity\": 5, \"percentage\": 10}"
+                    }
                 }
-              }
-            "#,
-    )?;
-    let expected = serde_json::from_str::<discounts::Output>(
-        r#"
-          {
-            "discounts": [{
-                "targets": [
-                    { "productVariant": { "id": "gid://shopify/ProductVariant/0" } }
-                ],
-                "value": { "percentage": { "value": 10.0 } }
-            }],
-            "discountApplicationStrategy": "FIRST"
-          }
+            }
         "#,
     )?;
+    let expected = crate::output::FunctionResult {
+        discounts: vec![crate::output::Discount {
+            conditions: None,
+            message: None,
+            targets: vec![crate::output::Target {
+                product_variant: Some(crate::output::ProductVariantTarget {
+                    id: "gid://shopify/ProductVariant/0".to_string(),
+                    quantity: None,
+                }),
+            }],
+            value: crate::output::Value {
+                percentage: Some(crate::output::Percentage {
+                    value: "10".to_string(),
+                }),
+                fixed_amount: None,
+            },
+        }],
+        discount_application_strategy: crate::output::DiscountApplicationStrategy::FIRST,
+    };
+
     assert_eq!(result, expected);
     Ok(())
 }
