@@ -3,6 +3,8 @@ name = "shopify_function"
 version = "0.1.0"
 edition = "2021"
 authors = ["Surma <surma@shopify.com>"]
+license = "Apache-2.0"
+description = "Crate to write Shopify Functions in Rust."
 
 [dependencies]
 shopify_function_macro = {path = "../shopify_function_macro"}
