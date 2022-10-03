@@ -8,6 +8,6 @@ authors = ["Surma <surma@shopify.com>"]
 proc-macro = true
 
 [dependencies]
-syn = "1.0"
+syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0.43"
