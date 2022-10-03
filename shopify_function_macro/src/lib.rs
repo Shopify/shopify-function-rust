@@ -6,6 +6,21 @@ use proc_macro2::TokenTree;
 use quote::quote;
 use syn::{self, FnArg};
 
+/// Marks a function as a Shopify Function entry point.
+///
+/// This attribute marks the following function as the entry point
+/// for a Shopify Function. A Shopify Function takes exactly one
+/// parameter of type `input_query::ResponseData`, and returns a
+/// `Result<output::FunctionResult>`. Both of these types are generated
+/// at build time from the Shopify's GraphQL schema. Take a look at the
+/// [`macro@input_query`] macro for details on those types.
+///
+/// ```compile_fail
+/// #[shopify_function]
+/// fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> {
+///     /* ... */
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn shopify_function(
     _attr: proc_macro::TokenStream,
@@ -56,6 +71,17 @@ fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
     value.as_str()[1..value.len() - 1].to_string()
 }
 
+/// Generate the types to interact with Shopify's API.
+///
+/// The `input_query` macro generates two modules that contain the types
+/// necessary to interact with Shopify's GraphQL Function API.
+///
+/// The macro takes two parameters:
+/// - `query_path`: A path to a GraphQL query, whose result will be used
+///    as the input for the function invocation.
+/// - `schema_path`: A path to Shopify's GraphQL schema definition. You
+///   can find it in the `example` folder of the repo, or use the CLI
+///   to download a fresh copy (not implemented yet).
 #[proc_macro_attribute]
 pub fn input_query(
     attr: proc_macro::TokenStream,
