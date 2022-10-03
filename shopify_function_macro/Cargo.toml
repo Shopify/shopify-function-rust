@@ -2,6 +2,7 @@
 name = "shopify_function_macro"
 version = "0.1.0"
 edition = "2021"
+authors = ["Surma <surma@shopify.com>"]
 
 [lib]
 proc-macro = true
