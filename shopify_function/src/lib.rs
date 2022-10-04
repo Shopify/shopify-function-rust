@@ -45,5 +45,19 @@ where
     f(parsed_payload)
 }
 
+#[macro_export]
+macro_rules! metafield_list {
+  ($option:ident) => {
+      serde_json::from_str(&$option.unwrap().value)?
+  };
+}
+
+#[macro_export]
+macro_rules! metafield {
+  ($option:ident) => {
+      &$option.unwrap().value
+  };
+}
+
 #[cfg(test)]
 mod tests {}
