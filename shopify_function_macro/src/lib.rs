@@ -112,22 +112,24 @@ pub fn input_query(
         .expect("Could not write to .output.query");
 
     return quote! {
+        extern crate serde_json;
+        extern crate graphql_client;
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
             #params,
-            response_derives = "Clone,Debug,PartialEq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,serde::Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,serde::Deserialize",
             skip_serializing_none
         )]
         struct InputQuery;
 
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[graphql(
-            query_path = #OUTPUT_QUERY_FILE_NAME,
+            query_path = "./.output.query",
             schema_path = #schema_path,
-            response_derives = "Clone,Debug,PartialEq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,serde::Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,serde::Deserialize",
             skip_serializing_none
         )]
         struct Output;

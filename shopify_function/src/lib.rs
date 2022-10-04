@@ -13,19 +13,18 @@
 //! }
 //! ```
 
+pub use graphql_client;
 pub use serde;
 pub use serde_json;
-pub use shopify_function_macro::{input_query, shopify_function};
+pub use shopify_function_macro;
 
-/// Only used for struct generation.
-#[doc(hidden)]
-pub mod scalars;
+pub(crate) mod scalars;
 
 pub mod prelude {
     pub use crate::scalars::*;
-    pub use graphql_client::GraphQLQuery;
-    pub use serde::{self, Deserialize, Serialize};
-    pub use serde_json;
+    // pub use graphql_client::*;
+    // pub use serde;
+    // pub use serde_json::json;
     pub use shopify_function_macro::{input_query, shopify_function};
 }
 
