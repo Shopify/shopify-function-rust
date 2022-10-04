@@ -21,6 +21,14 @@ pub use shopify_function_macro::{input_query, shopify_function};
 #[doc(hidden)]
 pub mod scalars;
 
+pub mod prelude {
+    pub use crate::scalars::*;
+    pub use graphql_client::GraphQLQuery;
+    pub use serde::{self, Deserialize, Serialize};
+    pub use serde_json;
+    pub use shopify_function_macro::{input_query, shopify_function};
+}
+
 /// Convenience alias for `anyhow::Result`.
 pub type Result<T> = anyhow::Result<T>;
 

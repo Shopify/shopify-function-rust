@@ -1,9 +1,5 @@
-use shopify_function::{
-    input_query,
-    scalars::*,
-    serde::{Deserialize, Serialize},
-    serde_json, shopify_function, Result,
-};
+use shopify_function::prelude::*;
+use shopify_function::Result;
 
 #[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
 #[derive(Serialize, Deserialize, Default, PartialEq)]
