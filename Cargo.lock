@@ -253,23 +253,12 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
- "shopify_function_macro 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shopify_function_macro",
 ]
 
 [[package]]
 name = "shopify_function_macro"
 version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "shopify_function_macro"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13d60ff31b653b47d1963f2dc0b6052ea612b7d8634151414789d71fb6eed27f"
 dependencies = [
  "proc-macro2",
  "quote",

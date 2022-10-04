@@ -71,6 +71,8 @@ fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
     value.as_str()[1..value.len() - 1].to_string()
 }
 
+const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
+
 /// Generate the types to interact with Shopify's API.
 ///
 /// The `input_query` macro generates two modules that contain the types
@@ -94,9 +96,9 @@ pub fn input_query(
     let schema_path = extract_attr(&params, "schema_path");
 
     let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
-    output_query_path.push(".output.query");
+    output_query_path.push(OUTPUT_QUERY_FILE_NAME);
     std::fs::File::create(&output_query_path)
-        .expect("Could not create .output.query")
+        .expect("Could not create output query file")
         .write_all(
             r"
                 mutation Output(
@@ -122,7 +124,7 @@ pub fn input_query(
 
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[graphql(
-            query_path = "./.output.query",
+            query_path = #OUTPUT_QUERY_FILE_NAME,
             schema_path = #schema_path,
             response_derives = "Clone,Debug,PartialEq,Deserialize",
             variables_derives = "Clone,Debug,PartialEq,Deserialize",
