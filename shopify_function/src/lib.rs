@@ -37,5 +37,17 @@ where
     f(parsed_payload)
 }
 
+#[macro_export]
+macro_rules! assert_function_output {
+  ($function_input:expr, $expected:expr) => {{
+      let output = run_function_with_input(crate::function, $function_input);
+      assert!(output.is_ok());
+      assert_eq!(
+          output.unwrap(),
+          $expected
+      );
+  }};
+}
+
 #[cfg(test)]
 mod tests {}
