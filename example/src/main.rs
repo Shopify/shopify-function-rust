@@ -1,11 +1,14 @@
-use shopify_function::{
-    input_query,
-    scalars::*,
-    serde::{Deserialize, Serialize},
-    serde_json, shopify_function, Result,
-};
+use shopify_function::{generate_types, scalars::*, shopify_function, Result};
 
-#[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
+use graphql_client;
+use serde::{Deserialize, Serialize};
+use serde_json;
+
+generate_types!(
+    query_path = "./input.graphql",
+    schema_path = "./schema.graphql"
+);
+
 #[derive(Serialize, Deserialize, Default, PartialEq)]
 struct Config {
     pub quantity: i64,

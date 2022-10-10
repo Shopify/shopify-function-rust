@@ -84,13 +84,9 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 /// - `schema_path`: A path to Shopify's GraphQL schema definition. You
 ///   can find it in the `example` folder of the repo, or use the CLI
 ///   to download a fresh copy (not implemented yet).
-#[proc_macro_attribute]
-pub fn input_query(
-    attr: proc_macro::TokenStream,
-    item: proc_macro::TokenStream,
-) -> proc_macro::TokenStream {
+#[proc_macro]
+pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let params = TokenStream::from(attr);
-    let ast: syn::Item = syn::parse(item).unwrap();
 
     let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let schema_path = extract_attr(&params, "schema_path");
@@ -131,8 +127,6 @@ pub fn input_query(
             skip_serializing_none
         )]
         struct Output;
-
-        #ast
     }
     .into();
 }

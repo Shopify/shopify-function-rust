@@ -15,7 +15,7 @@
 
 pub use serde;
 pub use serde_json;
-pub use shopify_function_macro::{input_query, shopify_function};
+pub use shopify_function_macro::{generate_types, shopify_function};
 
 /// Only used for struct generation.
 #[doc(hidden)]
