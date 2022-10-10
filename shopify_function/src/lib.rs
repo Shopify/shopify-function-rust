@@ -13,13 +13,19 @@
 //! }
 //! ```
 
-pub use serde;
-pub use serde_json;
 pub use shopify_function_macro::{generate_types, shopify_function};
 
 /// Only used for struct generation.
 #[doc(hidden)]
 pub mod scalars;
+
+pub mod prelude {
+    pub use crate::scalars::*;
+    pub use shopify_function_macro::{generate_types, shopify_function};
+}
+
+use serde;
+use serde_json;
 
 /// Convenience alias for `anyhow::Result`.
 pub type Result<T> = anyhow::Result<T>;

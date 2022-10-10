@@ -1,4 +1,5 @@
-use shopify_function::{generate_types, scalars::*, shopify_function, Result};
+use shopify_function::prelude::*;
+use shopify_function::Result;
 
 use graphql_client;
 use serde::{Deserialize, Serialize};
