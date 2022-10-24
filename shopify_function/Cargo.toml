@@ -1,6 +1,6 @@
 [package]
 name = "shopify_function"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Surma <surma@shopify.com>"]
 license = "Apache-2.0"
@@ -10,4 +10,4 @@ description = "Crate to write Shopify Functions in Rust."
 serde = { version = "1.0.13", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0.62"
-shopify_function_macro = { version = "0.2.1", path = "../shopify_function_macro" }
+shopify_function_macro = { version = "0.2.2", path = "../shopify_function_macro" }
