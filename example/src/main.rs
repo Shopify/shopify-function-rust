@@ -17,7 +17,7 @@ struct Config {
 }
 
 #[shopify_function]
-fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> {
+fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
     let config: Config = input
         .discount_node
         .metafield
@@ -41,9 +41,7 @@ fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> 
             targets.push(output::Target {
                 product_variant: Some(output::ProductVariantTarget {
                     id: match line.merchandise {
-                        input_query::InputQueryCartLinesMerchandise::ProductVariant(variant) => {
-                            variant.id
-                        }
+                        input::InputCartLinesMerchandise::ProductVariant(variant) => variant.id,
                         _ => continue,
                     },
                     quantity: None,

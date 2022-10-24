@@ -10,14 +10,14 @@ use syn::{self, FnArg};
 ///
 /// This attribute marks the following function as the entry point
 /// for a Shopify Function. A Shopify Function takes exactly one
-/// parameter of type `input_query::ResponseData`, and returns a
+/// parameter of type `input::ResponseData`, and returns a
 /// `Result<output::FunctionResult>`. Both of these types are generated
 /// at build time from the Shopify's GraphQL schema. Take a look at the
 /// [`macro@generate_types`] macro for details on those types.
 ///
 /// ```ignore
 /// #[shopify_function]
-/// fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> {
+/// fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
 ///     /* ... */
 /// }
 /// ```
@@ -75,19 +75,20 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 
 /// Generate the types to interact with Shopify's API.
 ///
-/// The macro generates two inline modules: `input_query` and `output`. The
+/// The macro generates two inline modules: `input` and `output`. The
 /// modules generate Rust types from the GraphQL schema file for the Function input
 /// and output respectively.
 ///
 /// The macro takes two parameters:
 /// - `query_path`: A path to a GraphQL query, whose result will be used
-///    as the input for the function invocation.
+///    as the input for the function invocation. The query MUST be named "input".
 /// - `schema_path`: A path to Shopify's GraphQL schema definition. You
 ///   can find it in the `example` folder of the repo, or use the CLI
 ///   to download a fresh copy (not implemented yet).
 ///
 /// Note: This macro creates a file called `.output.graphql` in the root
-/// directory of the project. It can be safely added to your `.gitignore`.
+/// directory of the project. It can be safely added to your `.gitignore`. We
+/// hope we can avoid creating this file at some point in the future.
 #[proc_macro]
 pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let params = TokenStream::from(attr);
@@ -101,9 +102,7 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .expect("Could not create output query file")
         .write_all(
             r"
-                mutation Output(
-                    $result: FunctionResult!
-                ) {
+                mutation Output($result: FunctionResult!) {
                     handleResult(result: $result)
                 }
             "
@@ -120,7 +119,7 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
             variables_derives = "Clone,Debug,PartialEq,Deserialize",
             skip_serializing_none
         )]
-        struct InputQuery;
+        struct Input;
 
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[graphql(

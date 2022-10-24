@@ -178,18 +178,6 @@ dependencies = [
 
 [[package]]
 name = "shopify_function"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e31c94659c701b3916c0f3f80fb38827ccfc14fa3aaaa8300353060eb56d2186"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
- "shopify_function_macro 0.2.0",
-]
-
-[[package]]
-name = "shopify_function"
 version = "0.2.1"
 dependencies = [
  "anyhow",
@@ -199,10 +187,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "shopify_function_macro"
-version = "0.2.0"
+name = "shopify_function"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86822bc14a6109a6647e5b1f605db6c7f57bf0cbb6e1d5af5840f0849a0f7f65"
+checksum = "d7269418f3a2895740dfa72043e19b8f977f7cf36875f782e4bc3df0649a86a4"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "shopify_function_macro 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "shopify_function_macro"
+version = "0.2.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -212,6 +210,8 @@ dependencies = [
 [[package]]
 name = "shopify_function_macro"
 version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "844354a5c8d51218d2bb19fc6c9bc3147923ef18c1c0c3d1d12f10a79878e7e1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -277,5 +277,5 @@ dependencies = [
  "graphql_client",
  "serde",
  "serde_json",
- "shopify_function 0.2.0",
+ "shopify_function 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
