@@ -13,9 +13,9 @@ use syn::{self, FnArg};
 /// parameter of type `input_query::ResponseData`, and returns a
 /// `Result<output::FunctionResult>`. Both of these types are generated
 /// at build time from the Shopify's GraphQL schema. Take a look at the
-/// [`macro@input_query`] macro for details on those types.
+/// [`macro@generate_types`] macro for details on those types.
 ///
-/// ```compile_fail
+/// ```ignore
 /// #[shopify_function]
 /// fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> {
 ///     /* ... */
@@ -75,8 +75,9 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 
 /// Generate the types to interact with Shopify's API.
 ///
-/// The `input_query` macro generates two modules that contain the types
-/// necessary to interact with Shopify's GraphQL Function API.
+/// The macro generates two inline modules: `input_query` and `output`. The
+/// modules generate Rust types from the GraphQL schema file for the Function input
+/// and output respectively.
 ///
 /// The macro takes two parameters:
 /// - `query_path`: A path to a GraphQL query, whose result will be used
@@ -84,6 +85,9 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 /// - `schema_path`: A path to Shopify's GraphQL schema definition. You
 ///   can find it in the `example` folder of the repo, or use the CLI
 ///   to download a fresh copy (not implemented yet).
+///
+/// Note: This macro creates a file called `.output.graphql` in the root
+/// directory of the project. It can be safely added to your `.gitignore`.
 #[proc_macro]
 pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let params = TokenStream::from(attr);

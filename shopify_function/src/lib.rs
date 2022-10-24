@@ -1,11 +1,14 @@
 //! Crate to write Shopify Functions in Rust.
 //!
-//! TBD...
+//! This crate provides some convenienve when building Shopify Functions using
+//! Rust. The crate takes care of generating the required Rust structs to handle
+//! the data types being passed between Shopify and the Function. The crate also
+//! takes care of deserializing the input data and serializing the output data.
 //!
-//! ```compile_fail
-//! use shopify_function::{input_query, scalars::*};
+//! ```ignore
+//! use shopify_function::prelude::*
 //!
-//! #[input_query(query_path = "./input.graphql", schema_path = "./schema.graphql")]
+//! generate_types!(query_path = "./input.graphql", schema_path = "./schema.graphql");
 //!
 //! #[shopify_function]
 //! fn function(input: input_query::ResponseData) -> Result<output::FunctionResult> {
@@ -30,8 +33,9 @@ use serde_json;
 /// Convenience alias for `anyhow::Result`.
 pub type Result<T> = anyhow::Result<T>;
 
-/// Runs the given function `f` with the invocation payload, returning
-/// the deserialized output.
+/// Runs the given function `f` with the invocation payload, returning the
+/// deserialized output. This function is provided as a helper when writing
+/// tests.
 pub fn run_function_with_input<'a, F, P: serde::Deserialize<'a>, O>(
     f: F,
     payload: &'a str,
