@@ -9,7 +9,7 @@ A crate to help developers build [Shopify Functions].
 * You must explicitly add the `graphql_client` dependency when using this crate. Due to a dependency on an unreleased fix, this must be added as a `git` dependency for now.
 
     ```
-    cargo add graphql_client --git https://github.com/graphql-rust/graphql-client
+    cargo add graphql_client --git https://github.com/graphql-rust/graphql-client --rev 0776197ad7cfde2c658490e7c7e627a21ed622cb
     ```
 
 ## Usage
@@ -24,7 +24,7 @@ See the [example] for details on usage, or use the following guide to convert an
 ## Updating an existing function to use `shopify_function`
 
 1. `cargo add shopify_function`
-1. `cargo add graphql_client --git https://github.com/graphql-rust/graphql-client`
+1. `cargo add graphql_client --git https://github.com/graphql-rust/graphql-client` --rev 0776197ad7cfde2c658490e7c7e627a21ed622cb
 1. Delete `src/api.rs`.
 1. In `main.rs`:
     1. Add imports for `shopify_function`.
