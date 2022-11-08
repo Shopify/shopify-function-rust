@@ -60,7 +60,6 @@ fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
     Ok(output::FunctionResult {
         discounts: vec![output::Discount {
             message: None,
-            conditions: None,
             targets,
             value: output::Value {
                 percentage: Some(output::Percentage {
