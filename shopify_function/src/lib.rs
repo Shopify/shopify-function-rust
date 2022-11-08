@@ -1,6 +1,6 @@
 //! Crate to write Shopify Functions in Rust.
 //!
-//! This crate provides some convenienve when building Shopify Functions using
+//! This crate provides some convenience when building Shopify Functions using
 //! Rust. The crate takes care of generating the required Rust structs to handle
 //! the data types being passed between Shopify and the Function. The crate also
 //! takes care of deserializing the input data and serializing the output data.
