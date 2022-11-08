@@ -93,7 +93,6 @@ fn test_discount_with_configuration() -> Result<()> {
     )?;
     let expected = crate::output::FunctionResult {
         discounts: vec![crate::output::Discount {
-            conditions: None,
             message: None,
             targets: vec![crate::output::Target {
                 product_variant: Some(crate::output::ProductVariantTarget {
