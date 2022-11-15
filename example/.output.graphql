@@ -1,0 +1,7 @@
+
+                mutation Output(
+                    $result: FunctionResult!
+                ) {
+                    handleResult(result: $result)
+                }
+            

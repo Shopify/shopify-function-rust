@@ -2,6 +2,7 @@
 name = "volume"
 version = "1.0.0"
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 shopify_function = { version = "0.2.3" }
