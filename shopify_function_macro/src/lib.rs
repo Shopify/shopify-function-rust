@@ -81,7 +81,7 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 ///
 /// The macro takes two parameters:
 /// - `query_path`: A path to a GraphQL query, whose result will be used
-///    as the input for the function invocation. The query MUST be named "input".
+///    as the input for the function invocation. The query MUST be named "Input".
 /// - `schema_path`: A path to Shopify's GraphQL schema definition. You
 ///   can find it in the `example` folder of the repo, or use the CLI
 ///   to download a fresh copy (not implemented yet).
