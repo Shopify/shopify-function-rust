@@ -2,8 +2,6 @@
 
 A crate to help developers build [Shopify Functions].
 
-> **Note**: This crate is in developer preview and is not intended for production use. We anticipate  breaking changes based on your feedback!
-
 ## Dependencies
 
 * Make sure you have `graphql_client` in your dependencies
