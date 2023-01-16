@@ -27,9 +27,6 @@ pub mod prelude {
     pub use shopify_function_macro::{generate_types, shopify_function};
 }
 
-use serde;
-use serde_json;
-
 /// Convenience alias for `anyhow::Result`.
 pub type Result<T> = anyhow::Result<T>;
 

@@ -1,9 +1,7 @@
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
-use graphql_client;
 use serde::{Deserialize, Serialize};
-use serde_json;
 
 generate_types!(
     query_path = "./input.graphql",
