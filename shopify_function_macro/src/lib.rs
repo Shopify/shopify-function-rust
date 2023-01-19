@@ -63,10 +63,10 @@ fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
             TokenTree::Ident(ident) => ident.to_string().as_str() == attr,
             _ => false,
         })
-        .expect(format!("No attribute with name {} found", attr).as_str());
+        .unwrap_or_else(|| panic!("No attribute with name {} found", attr));
     let value = attrs
         .get(attr_index + 2)
-        .expect(format!("No value given for {} attribute", attr).as_str())
+        .unwrap_or_else(|| panic!("No value given for {} attribute", attr))
         .to_string();
     value.as_str()[1..value.len() - 1].to_string()
 }
@@ -110,13 +110,13 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         )
         .expect("Could not write to .output.query");
 
-    return quote! {
+    quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
             #params,
-            response_derives = "Clone,Debug,PartialEq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
         struct Input;
@@ -125,13 +125,13 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         #[graphql(
             query_path = #OUTPUT_QUERY_FILE_NAME,
             schema_path = #schema_path,
-            response_derives = "Clone,Debug,PartialEq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
         struct Output;
     }
-    .into();
+    .into()
 }
 
 #[cfg(test)]

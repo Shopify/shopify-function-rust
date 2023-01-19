@@ -1,5 +1,5 @@
 [package]
-name = "volume"
+name = "example"
 version = "1.0.0"
 edition = "2021"
 license = "MIT"
