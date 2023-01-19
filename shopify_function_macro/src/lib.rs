@@ -115,8 +115,8 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
             #params,
-            response_derives = "Clone,Debug,PartialEq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
         struct Input;
@@ -125,8 +125,8 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         #[graphql(
             query_path = #OUTPUT_QUERY_FILE_NAME,
             schema_path = #schema_path,
-            response_derives = "Clone,Debug,PartialEq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
         struct Output;
