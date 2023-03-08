@@ -4,3 +4,4 @@ pub type Int = i64;
 pub type ID = String;
 pub type Decimal = String;
 pub type Void = ();
+pub type URL = String;
