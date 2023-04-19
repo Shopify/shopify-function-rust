@@ -43,7 +43,9 @@ pub fn shopify_function(
 
     let gen = quote! {
         fn main() -> ::shopify_function::Result<()> {
-            let input: #input_type = serde_json::from_reader(std::io::BufReader::new(std::io::stdin()))?;
+            let mut string = String::new();
+            std::io::Read::read_to_string(&mut std::io::stdin(), &mut string)?;
+            let input: #input_type = serde_json::from_str(&string)?;
             let mut out = std::io::stdout();
             let mut serializer = serde_json::Serializer::new(&mut out);
             #name(input)?.serialize(&mut serializer)?;
