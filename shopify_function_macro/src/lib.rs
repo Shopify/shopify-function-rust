@@ -42,7 +42,7 @@ pub fn shopify_function(
     };
 
     let gen = quote! {
-        fn main() -> Result<()> {
+        fn main() -> ::shopify_function::Result<()> {
             let input: #input_type = serde_json::from_reader(std::io::BufReader::new(std::io::stdin()))?;
             let mut out = std::io::stdout();
             let mut serializer = serde_json::Serializer::new(&mut out);
