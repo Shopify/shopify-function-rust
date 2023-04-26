@@ -4,6 +4,7 @@ use std::path::Path;
 use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 use quote::quote;
+use syn::parse_macro_input;
 use syn::{self, FnArg};
 
 /// Marks a function as a Shopify Function entry point.
@@ -117,8 +118,8 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
             #params,
-            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize,OneOfDefault",
+            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize,OneOfDefault",
             skip_serializing_none
         )]
         struct Input;
@@ -127,11 +128,69 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         #[graphql(
             query_path = #OUTPUT_QUERY_FILE_NAME,
             schema_path = #schema_path,
-            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize,OneOfDefault",
+            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize,OneOfDefault",
             skip_serializing_none
         )]
         struct Output;
+    }
+    .into()
+}
+
+fn is_type(ty: &syn::Type, name: impl AsRef<str>) -> bool {
+    if let syn::Type::Path(path) = ty {
+        path.path.segments.len() == 1
+            && path
+                .path
+                .segments
+                .first()
+                .unwrap()
+                .ident
+                .to_string()
+                .as_str()
+                == name.as_ref()
+    } else {
+        false
+    }
+}
+
+#[proc_macro_derive(OneOfDefault)]
+pub fn one_of_default_derive(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let parsed_struct: syn::ItemStruct = parse_macro_input!(item);
+    // If every field in the struct is an `Option`, it's the result
+    // of a `@oneOf` directive.
+    let is_oneof_struct = parsed_struct
+        .fields
+        .iter()
+        .all(|field| is_type(&field.ty, "Option"));
+
+    let derive_impl = if is_oneof_struct {
+        let struct_name = parsed_struct.ident.clone();
+        let field_inits: Vec<TokenStream> = parsed_struct
+            .fields
+            .iter()
+            .map(|field| {
+                let ident = &field.ident;
+                quote! {
+                    #ident: None
+                }
+            })
+            .collect();
+        quote! {
+            impl ::core::default::Default for #struct_name {
+                fn default() -> Self {
+                    #struct_name {
+                        #(#field_inits),*
+                    }
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
+
+    quote! {
+        #derive_impl
     }
     .into()
 }

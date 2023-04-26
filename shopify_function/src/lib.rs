@@ -24,7 +24,7 @@ pub mod scalars;
 
 pub mod prelude {
     pub use crate::scalars::*;
-    pub use shopify_function_macro::{generate_types, shopify_function};
+    pub use shopify_function_macro::{generate_types, shopify_function, OneOfDefault};
 }
 
 /// Convenience alias for `anyhow::Result`.
