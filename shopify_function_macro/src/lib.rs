@@ -156,7 +156,8 @@ fn is_type(ty: &syn::Type, name: impl AsRef<str>) -> bool {
 
 #[proc_macro_derive(OneOfDefault)]
 pub fn one_of_default_derive(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let parsed_struct: syn::ItemStruct = parse_macro_input!(item);
+    let parsed_item: syn::Item = parse_macro_input!(item);
+    let syn::Item::Struct(parsed_struct) = parsed_item else { return quote!{}.into()};
     // If every field in the struct is an `Option`, it's the result
     // of a `@oneOf` directive.
     let is_oneof_struct = parsed_struct

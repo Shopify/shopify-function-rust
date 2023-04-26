@@ -63,7 +63,7 @@ fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
                 percentage: Some(output::Percentage {
                     value: config.percentage.to_string(),
                 }),
-                fixed_amount: None,
+                ..Default::default()
             },
         }],
         discount_application_strategy: output::DiscountApplicationStrategy::FIRST,
