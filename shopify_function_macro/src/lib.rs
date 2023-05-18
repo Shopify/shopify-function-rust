@@ -30,6 +30,9 @@ impl Parse for ShopifyFunctionArgs {
                 args.input_stream = Some(Self::parse_expression::<kw::input_stream>(&input)?);
             } else if lookahead.peek(kw::output_stream) {
                 args.output_stream = Some(Self::parse_expression::<kw::output_stream>(&input)?);
+            } else {
+                // Ignore unknown tokens
+                let _ = input.parse::<proc_macro2::TokenTree>();
             }
         }
         Ok(args)
