@@ -54,6 +54,18 @@ impl Parse for ShopifyFunctionArgs {
 ///     /* ... */
 /// }
 /// ```
+///
+/// By default, the function input is read from stdin and the result
+/// is outputted to stdout. To override this, optional `input_stream`
+/// and `output_stream` parameters can be set. These parameters must
+/// implement the std::io::Read and std::io::Write traits respectively.
+///
+/// ```ignore
+/// #[shopify_function(input_stream = MyInputStream, output_stream = MyOutputStream)]
+/// fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
+///     /* ... */
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn shopify_function(
     attr: proc_macro::TokenStream,
