@@ -27,14 +27,19 @@ const FUNCTION_INPUT: &str = r#"{
     "num": 123,
     "name": "test"
 }"#;
+static mut FUNCTION_OUTPUT: Vec<u8> = vec![];
 
 #[test]
 fn test_function() {
+    let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890"}"#;
     main().unwrap();
+    let actual_result = std::str::from_utf8(unsafe { FUNCTION_OUTPUT.as_slice() }).unwrap();
+    assert_eq!(actual_result, expected_result);
 }
 
 #[shopify_function(
-    input_stream = std::io::Cursor::new(FUNCTION_INPUT.as_bytes().to_vec())
+    input_stream = std::io::Cursor::new(FUNCTION_INPUT.as_bytes().to_vec()),
+    output_stream = unsafe { &mut FUNCTION_OUTPUT }
 )]
 fn my_function(input: input::ResponseData) -> Result<output::FunctionResult> {
     Ok(output::FunctionResult {
