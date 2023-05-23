@@ -191,6 +191,7 @@ name = "shopify_function"
 version = "0.2.4"
 dependencies = [
  "anyhow",
+ "graphql_client",
  "serde",
  "serde_json",
  "shopify_function_macro",

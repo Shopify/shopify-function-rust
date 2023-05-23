@@ -3,9 +3,42 @@ use std::path::Path;
 
 use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
-use quote::quote;
-use syn::parse_macro_input;
-use syn::{self, FnArg};
+
+use quote::{quote, ToTokens};
+use syn::{self, parse_macro_input, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Token};
+
+#[derive(Clone, Default, Debug)]
+struct ShopifyFunctionArgs {
+    input_stream: Option<Expr>,
+    output_stream: Option<Expr>,
+}
+
+impl ShopifyFunctionArgs {
+    fn parse_expression<T: syn::parse::Parse>(input: &ParseStream<'_>) -> syn::Result<Expr> {
+        let _ = input.parse::<T>()?;
+        let _ = input.parse::<Token![=]>()?;
+        let value: Expr = input.parse()?;
+        Ok(value)
+    }
+}
+
+impl Parse for ShopifyFunctionArgs {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut args = Self::default();
+        while !input.is_empty() {
+            let lookahead = input.lookahead1();
+            if lookahead.peek(kw::input_stream) {
+                args.input_stream = Some(Self::parse_expression::<kw::input_stream>(&input)?);
+            } else if lookahead.peek(kw::output_stream) {
+                args.output_stream = Some(Self::parse_expression::<kw::output_stream>(&input)?);
+            } else {
+                // Ignore unknown tokens
+                let _ = input.parse::<proc_macro2::TokenTree>();
+            }
+        }
+        Ok(args)
+    }
+}
 
 /// Marks a function as a Shopify Function entry point.
 ///
@@ -22,12 +55,25 @@ use syn::{self, FnArg};
 ///     /* ... */
 /// }
 /// ```
+///
+/// By default, the function input is read from stdin and the result
+/// is outputted to stdout. To override this, optional `input_stream`
+/// and `output_stream` parameters can be set. These parameters must
+/// implement the std::io::Read and std::io::Write traits respectively.
+///
+/// ```ignore
+/// #[shopify_function(input_stream = MyInputStream, output_stream = MyOutputStream)]
+/// fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
+///     /* ... */
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn shopify_function(
-    _attr: proc_macro::TokenStream,
+    attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let ast: syn::ItemFn = syn::parse(item).unwrap();
+    let args = parse_macro_input!(attr as ShopifyFunctionArgs);
 
     let name = &ast.sig.ident;
     if ast.sig.inputs.len() != 1 {
@@ -42,12 +88,23 @@ pub fn shopify_function(
         }
     };
 
+    let input_stream = args
+        .input_stream
+        .map_or(quote! { std::io::stdin() }, |stream| {
+            stream.to_token_stream()
+        });
+    let output_stream = args
+        .output_stream
+        .map_or(quote! { std::io::stdout() }, |stream| {
+            stream.to_token_stream()
+        });
+
     let gen = quote! {
         fn main() -> ::shopify_function::Result<()> {
             let mut string = String::new();
-            std::io::Read::read_to_string(&mut std::io::stdin(), &mut string)?;
+            std::io::Read::read_to_string(&mut #input_stream, &mut string)?;
             let input: #input_type = serde_json::from_str(&string)?;
-            let mut out = std::io::stdout();
+            let mut out = #output_stream;
             let mut serializer = serde_json::Serializer::new(&mut out);
             #name(input)?.serialize(&mut serializer)?;
             Ok(())
@@ -198,3 +255,8 @@ pub fn one_of_default_derive(item: proc_macro::TokenStream) -> proc_macro::Token
 
 #[cfg(test)]
 mod tests {}
+
+mod kw {
+    syn::custom_keyword!(input_stream);
+    syn::custom_keyword!(output_stream);
+}

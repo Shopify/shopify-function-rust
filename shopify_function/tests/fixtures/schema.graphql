@@ -1,0 +1,53 @@
+schema {
+  query: Input
+  mutation: MutationRoot
+}
+
+"""
+Exactly one field of input must be provided, and all others omitted.
+"""
+directive @oneOf on INPUT_OBJECT
+
+"""
+Represents a unique identifier, often used to refetch an object.
+The ID type appears in a JSON response as a String, but it is not intended to be human-readable.
+
+Example value: `"gid://shopify/Product/10079785100"`
+"""
+scalar ID
+
+"""
+A void type that can be used to return a null value from a mutation.
+"""
+scalar Void
+
+"""
+The input object for the function.
+"""
+type Input {
+  id: ID!
+  num: Int
+  name: String
+}
+
+"""
+The root mutation for the API.
+"""
+type MutationRoot {
+  """
+  Handles the function result.
+  """
+  handleResult(
+    """
+    The result of the function.
+    """
+    result: FunctionResult!
+  ): Void!
+}
+
+"""
+The result of the function.
+"""
+input FunctionResult {
+  name: String
+}
