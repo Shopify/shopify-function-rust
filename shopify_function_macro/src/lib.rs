@@ -6,7 +6,7 @@ use proc_macro2::TokenTree;
 use quote::{quote, ToTokens};
 use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Token};
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default)]
 struct ShopifyFunctionArgs {
     input_stream: Option<Expr>,
     output_stream: Option<Expr>,
