@@ -7,7 +7,7 @@ A crate to help developers build [Shopify Functions].
 * Make sure you have `graphql_client` in your dependencies
 
     ```
-    cargo add graphql_client@0.12.0
+    cargo add graphql_client@0.13.0
     ```
 
 ## Usage
@@ -22,7 +22,7 @@ See the [example] for details on usage, or use the following guide to convert an
 ## Updating an existing function to use `shopify_function`
 
 1. `cargo add shopify_function`
-1. `cargo add graphql_client@0.12.0`
+1. `cargo add graphql_client@0.13.0`
 1. Delete `src/api.rs`.
 1. In `main.rs`:
     1. Add imports for `shopify_function`.

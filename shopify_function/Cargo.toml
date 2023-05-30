@@ -13,4 +13,4 @@ anyhow = "1.0.62"
 shopify_function_macro = { version = "0.2.4", path = "../shopify_function_macro" }
 
 [dev-dependencies]
-graphql_client = "0.12.0"
+graphql_client = "0.13.0"
