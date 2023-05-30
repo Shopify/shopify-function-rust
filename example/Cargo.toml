@@ -8,4 +8,4 @@ license = "MIT"
 shopify_function = { path = "../shopify_function", version = "0.2.4" }
 serde = { version = "1.0.13", features = ["derive"] }
 serde_json = "1.0"
-graphql_client = "0.12.0"
+graphql_client = "0.13.0"

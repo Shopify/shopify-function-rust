@@ -94,18 +94,15 @@ fn test_discount_with_configuration() -> Result<()> {
     let expected = crate::output::FunctionResult {
         discounts: vec![crate::output::Discount {
             message: None,
-            targets: vec![crate::output::Target {
-                product_variant: Some(crate::output::ProductVariantTarget {
+            targets: vec![crate::output::Target::ProductVariant(
+                output::ProductVariantTarget {
                     id: "gid://shopify/ProductVariant/0".to_string(),
                     quantity: None,
-                }),
-            }],
-            value: crate::output::Value {
-                percentage: Some(crate::output::Percentage {
-                    value: "10".to_string(),
-                }),
-                fixed_amount: None,
-            },
+                },
+            )],
+            value: crate::output::Value::Percentage(output::Percentage {
+                value: "10".to_string(),
+            }),
         }],
         discount_application_strategy: crate::output::DiscountApplicationStrategy::FIRST,
     };

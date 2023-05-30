@@ -36,15 +36,15 @@ fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
     let mut targets = vec![];
     for line in cart_lines {
         if line.quantity >= config.quantity {
-            targets.push(output::Target {
-                product_variant: Some(output::ProductVariantTarget {
+            targets.push(output::Target::ProductVariant(
+                output::ProductVariantTarget {
                     id: match line.merchandise {
                         input::InputCartLinesMerchandise::ProductVariant(variant) => variant.id,
                         _ => continue,
                     },
                     quantity: None,
-                }),
-            });
+                },
+            ));
         }
     }
 
@@ -54,17 +54,13 @@ fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
             discounts: vec![],
         });
     }
-
     Ok(output::FunctionResult {
         discounts: vec![output::Discount {
             message: None,
             targets,
-            value: output::Value {
-                percentage: Some(output::Percentage {
-                    value: config.percentage.to_string(),
-                }),
-                fixed_amount: None,
-            },
+            value: output::Value::Percentage(output::Percentage {
+                value: config.percentage.to_string(),
+            }),
         }],
         discount_application_strategy: output::DiscountApplicationStrategy::FIRST,
     })
