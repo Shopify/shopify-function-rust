@@ -104,8 +104,9 @@ pub fn shopify_function(
             std::io::Read::read_to_string(&mut #input_stream, &mut string)?;
             let input: #input_type = serde_json::from_str(&string)?;
             let mut out = #output_stream;
-            let mut serializer = serde_json::Serializer::new(&mut out);
-            #name(input)?.serialize(&mut serializer)?;
+            let result = #name(input)?;
+            let serialized = serde_json::to_vec(&result)?;
+            std::io::Write::write_all(&mut out, serialized.as_slice())?;
             Ok(())
         }
         #ast
