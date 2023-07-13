@@ -3,3 +3,7 @@ query Input {
   num
   name
 }
+
+query FooInput {
+  id
+}

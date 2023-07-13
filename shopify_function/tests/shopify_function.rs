@@ -11,7 +11,7 @@ static mut FUNCTION_OUTPUT: Vec<u8> = vec![];
 #[test]
 fn test_function() {
     let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890"}"#;
-    main().unwrap();
+    export_main().unwrap();
     let actual_result = std::str::from_utf8(unsafe { FUNCTION_OUTPUT.as_slice() }).unwrap();
     assert_eq!(actual_result, expected_result);
 }
@@ -41,6 +41,21 @@ fn test_json_deserialization() {
   output_stream = unsafe { &mut FUNCTION_OUTPUT }
 )]
 fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
+    Ok(output::FunctionResult {
+        name: Some(format!("new name: {}", input.id)),
+    })
+}
+
+#[shopify_function(
+  export = foo,
+  query = FooInput,
+  mutation = FooOutput,
+  query_path = "./tests/fixtures/input.graphql",
+  schema_path = "./tests/fixtures/schema.graphql",
+  input_stream = std::io::Cursor::new(FUNCTION_INPUT.as_bytes().to_vec()),
+  output_stream = unsafe { &mut FUNCTION_OUTPUT }
+)]
+fn foo(input: input::ResponseData) -> Result<output::FunctionResult> {
     Ok(output::FunctionResult {
         name: Some(format!("new name: {}", input.id)),
     })

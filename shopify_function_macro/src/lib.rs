@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::Path;
 
+use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{
     self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Ident, LitStr, Token,
@@ -56,8 +57,6 @@ impl Parse for ShopifyFunctionArgs {
         Ok(args)
     }
 }
-
-const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 
 /// Marks a function as a Shopify Function entry point.
 ///
@@ -135,6 +134,8 @@ pub fn shopify_function(
         });
 
     let export: Ident = args.export.unwrap();
+    let _export_string: String = export.to_string();
+    let export_wrapper: Ident = Ident::new(&format!("export_{}", export), Span::mixed_site());
     let query: Ident = args.query.unwrap();
     let mutation: Ident = args.mutation.unwrap();
     let query_path: LitStr = args.query_path.unwrap();
@@ -142,19 +143,21 @@ pub fn shopify_function(
 
     let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
 
+    // TODO: Separate from input type gen
     let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
-    output_query_path.push(OUTPUT_QUERY_FILE_NAME);
+    let output_query_file_name: &str = &format!(".{}.output.graphql", export);
+    output_query_path.push(output_query_file_name);
+
     std::fs::File::create(&output_query_path)
         .expect("Could not create output query file")
         .write_all(
-            r"
-                mutation Output($result: FunctionResult!) {
-                    handleResult(result: $result)
-                }
-            "
+            format!(
+                "mutation {}($result: FunctionResult!) {{ handleResult(result: $result) }}",
+                mutation
+            )
             .as_bytes(),
         )
-        .expect(&format!("Could not write to {}", OUTPUT_QUERY_FILE_NAME));
+        .expect(&format!("Could not write to {}", output_query_file_name));
 
     let gen = quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
@@ -170,7 +173,7 @@ pub fn shopify_function(
 
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[graphql(
-            query_path = #OUTPUT_QUERY_FILE_NAME,
+            query_path = #output_query_file_name,
             schema_path = #schema_path,
             response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
@@ -178,7 +181,9 @@ pub fn shopify_function(
         )]
         struct #mutation;
 
-        fn #export() -> ::shopify_function::Result<()> {
+        #[no_mangle]
+        // #[export_name = #export_string]
+        pub extern "C" fn #export_wrapper() -> ::shopify_function::Result<()> {
             let mut string = String::new();
             std::io::Read::read_to_string(&mut #input_stream, &mut string)?;
             let input: #input_type = serde_json::from_str(&string)?;
