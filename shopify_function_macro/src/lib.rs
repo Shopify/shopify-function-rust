@@ -168,7 +168,7 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
             "
             .as_bytes(),
         )
-        .expect("Could not write to .output.query");
+        .expect(&format!("Could not write to {}", OUTPUT_QUERY_FILE_NAME));
 
     quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
