@@ -1,22 +1,24 @@
 use std::io::Write;
 use std::path::Path;
 
-use proc_macro2::TokenStream;
-use proc_macro2::TokenTree;
 use quote::{quote, ToTokens};
-use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Token};
+use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, LitStr, Token};
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionArgs {
+    query_path: Option<LitStr>,
+    schema_path: Option<LitStr>,
     input_stream: Option<Expr>,
     output_stream: Option<Expr>,
 }
 
 impl ShopifyFunctionArgs {
-    fn parse_expression<T: syn::parse::Parse>(input: &ParseStream<'_>) -> syn::Result<Expr> {
-        let _ = input.parse::<T>()?;
+    fn parse_expression<K: syn::parse::Parse, V: syn::parse::Parse>(
+        input: &ParseStream<'_>,
+    ) -> syn::Result<V> {
+        let _ = input.parse::<K>()?;
         let _ = input.parse::<Token![=]>()?;
-        let value: Expr = input.parse()?;
+        let value: V = input.parse()?;
         Ok(value)
     }
 }
@@ -26,10 +28,15 @@ impl Parse for ShopifyFunctionArgs {
         let mut args = Self::default();
         while !input.is_empty() {
             let lookahead = input.lookahead1();
-            if lookahead.peek(kw::input_stream) {
-                args.input_stream = Some(Self::parse_expression::<kw::input_stream>(&input)?);
+            if lookahead.peek(kw::query_path) {
+                args.query_path = Some(Self::parse_expression::<kw::query_path, LitStr>(&input)?);
+            } else if lookahead.peek(kw::schema_path) {
+                args.schema_path = Some(Self::parse_expression::<kw::schema_path, LitStr>(&input)?);
+            } else if lookahead.peek(kw::input_stream) {
+                args.input_stream = Some(Self::parse_expression::<kw::input_stream, Expr>(&input)?);
             } else if lookahead.peek(kw::output_stream) {
-                args.output_stream = Some(Self::parse_expression::<kw::output_stream>(&input)?);
+                args.output_stream =
+                    Some(Self::parse_expression::<kw::output_stream, Expr>(&input)?);
             } else {
                 // Ignore unknown tokens
                 let _ = input.parse::<proc_macro2::TokenTree>();
@@ -38,6 +45,8 @@ impl Parse for ShopifyFunctionArgs {
         Ok(args)
     }
 }
+
+const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 
 /// Marks a function as a Shopify Function entry point.
 ///
@@ -49,11 +58,22 @@ impl Parse for ShopifyFunctionArgs {
 /// [`macro@generate_types`] macro for details on those types.
 ///
 /// ```ignore
-/// #[shopify_function]
+/// #[shopify_function(query_path = "input.graphql", schema_path = "schema.graphql")]
 /// fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
 ///     /* ... */
 /// }
 /// ```
+///
+/// Generation of GraphQL types
+/// - `query_path`: A path to a GraphQL query, whose result will be used
+///    as the input for the function invocation. The query MUST be named "Input".
+/// - `schema_path`: A path to Shopify's GraphQL schema definition. You
+///   can find it in the `example` folder of the repo, or use the CLI
+///   to download a fresh copy.
+///
+/// Note: This macro creates a file called `.output.graphql` in the root
+/// directory of the project. It can be safely added to your `.gitignore`. We
+/// hope we can avoid creating this file at some point in the future.
 ///
 /// By default, the function input is read from stdin and the result
 /// is outputted to stdout. To override this, optional `input_stream`
@@ -61,7 +81,12 @@ impl Parse for ShopifyFunctionArgs {
 /// implement the std::io::Read and std::io::Write traits respectively.
 ///
 /// ```ignore
-/// #[shopify_function(input_stream = MyInputStream, output_stream = MyOutputStream)]
+/// #[shopify_function(
+///     query_path = "input.graphql",
+///     schema_path = "schema.graphql",
+///     input_stream = MyInputStream,
+///     output_stream = MyOutputStream
+/// )]
 /// fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
 ///     /* ... */
 /// }
@@ -98,63 +123,10 @@ pub fn shopify_function(
             stream.to_token_stream()
         });
 
-    let gen = quote! {
-        fn main() -> ::shopify_function::Result<()> {
-            let mut string = String::new();
-            std::io::Read::read_to_string(&mut #input_stream, &mut string)?;
-            let input: #input_type = serde_json::from_str(&string)?;
-            let mut out = #output_stream;
-            let result = #name(input)?;
-            let serialized = serde_json::to_vec(&result)?;
-            std::io::Write::write_all(&mut out, serialized.as_slice())?;
-            Ok(())
-        }
-        #ast
-    };
-
-    gen.into()
-}
-
-fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
-    let attrs: Vec<TokenTree> = attrs.clone().into_iter().collect();
-    let attr_index = attrs
-        .iter()
-        .position(|item| match item {
-            TokenTree::Ident(ident) => ident.to_string().as_str() == attr,
-            _ => false,
-        })
-        .unwrap_or_else(|| panic!("No attribute with name {} found", attr));
-    let value = attrs
-        .get(attr_index + 2)
-        .unwrap_or_else(|| panic!("No value given for {} attribute", attr))
-        .to_string();
-    value.as_str()[1..value.len() - 1].to_string()
-}
-
-const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
-
-/// Generate the types to interact with Shopify's API.
-///
-/// The macro generates two inline modules: `input` and `output`. The
-/// modules generate Rust types from the GraphQL schema file for the Function input
-/// and output respectively.
-///
-/// The macro takes two parameters:
-/// - `query_path`: A path to a GraphQL query, whose result will be used
-///    as the input for the function invocation. The query MUST be named "Input".
-/// - `schema_path`: A path to Shopify's GraphQL schema definition. You
-///   can find it in the `example` folder of the repo, or use the CLI
-///   to download a fresh copy (not implemented yet).
-///
-/// Note: This macro creates a file called `.output.graphql` in the root
-/// directory of the project. It can be safely added to your `.gitignore`. We
-/// hope we can avoid creating this file at some point in the future.
-#[proc_macro]
-pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let params = TokenStream::from(attr);
+    let query_path: LitStr = args.query_path.unwrap();
+    let schema_path: LitStr = args.schema_path.unwrap();
 
     let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let schema_path = extract_attr(&params, "schema_path");
 
     let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
     output_query_path.push(OUTPUT_QUERY_FILE_NAME);
@@ -170,11 +142,12 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         )
         .expect(&format!("Could not write to {}", OUTPUT_QUERY_FILE_NAME));
 
-    quote! {
+    let gen = quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
-            #params,
+            query_path = #query_path,
+            schema_path = #schema_path,
             response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
@@ -190,14 +163,30 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
             skip_serializing_none
         )]
         struct Output;
-    }
-    .into()
+
+        fn main() -> ::shopify_function::Result<()> {
+            let mut string = String::new();
+            std::io::Read::read_to_string(&mut #input_stream, &mut string)?;
+            let input: #input_type = serde_json::from_str(&string)?;
+            let mut out = #output_stream;
+            let result = #name(input)?;
+            let serialized = serde_json::to_vec(&result)?;
+            std::io::Write::write_all(&mut out, serialized.as_slice())?;
+            Ok(())
+        }
+
+        #ast
+    };
+
+    gen.into()
 }
 
 #[cfg(test)]
 mod tests {}
 
 mod kw {
+    syn::custom_keyword!(query_path);
+    syn::custom_keyword!(schema_path);
     syn::custom_keyword!(input_stream);
     syn::custom_keyword!(output_stream);
 }

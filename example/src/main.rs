@@ -3,18 +3,13 @@ use shopify_function::Result;
 
 use serde::{Deserialize, Serialize};
 
-generate_types!(
-    query_path = "./input.graphql",
-    schema_path = "./schema.graphql"
-);
-
 #[derive(Serialize, Deserialize, Default, PartialEq)]
 struct Config {
     pub quantity: i64,
     pub percentage: f64,
 }
 
-#[shopify_function]
+#[shopify_function(query_path = "./input.graphql", schema_path = "./schema.graphql")]
 fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
     let config: Config = input
         .discount_node

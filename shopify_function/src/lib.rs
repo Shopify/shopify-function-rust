@@ -8,15 +8,13 @@
 //! ```ignore
 //! use shopify_function::prelude::*
 //!
-//! generate_types!(query_path = "./input.graphql", schema_path = "./schema.graphql");
-//!
-//! #[shopify_function]
+//! #[shopify_function(query_path = "./input.graphql", schema_path = "./schema.graphql")]
 //! fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
 //!     /* ... */
 //! }
 //! ```
 
-pub use shopify_function_macro::{generate_types, shopify_function};
+pub use shopify_function_macro::shopify_function;
 
 /// Only used for struct generation.
 #[doc(hidden)]
@@ -24,7 +22,7 @@ pub mod scalars;
 
 pub mod prelude {
     pub use crate::scalars::*;
-    pub use shopify_function_macro::{generate_types, shopify_function};
+    pub use shopify_function_macro::shopify_function;
 }
 
 /// Convenience alias for `anyhow::Result`.
