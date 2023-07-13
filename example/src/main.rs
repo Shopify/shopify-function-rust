@@ -9,7 +9,13 @@ struct Config {
     pub percentage: f64,
 }
 
-#[shopify_function(query_path = "./input.graphql", schema_path = "./schema.graphql")]
+#[shopify_function(
+    export = main,
+    query = Input,
+    mutation = Output,
+    query_path = "./input.graphql",
+    schema_path = "./schema.graphql"
+)]
 fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
     let config: Config = input
         .discount_node

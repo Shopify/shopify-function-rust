@@ -32,12 +32,15 @@ fn test_json_deserialization() {
 }
 
 #[shopify_function(
+  export = main,
+  query = Input,
+  mutation = Output,
   query_path = "./tests/fixtures/input.graphql",
   schema_path = "./tests/fixtures/schema.graphql",
   input_stream = std::io::Cursor::new(FUNCTION_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut FUNCTION_OUTPUT }
 )]
-fn my_function(input: input::ResponseData) -> Result<output::FunctionResult> {
+fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
     Ok(output::FunctionResult {
         name: Some(format!("new name: {}", input.id)),
     })

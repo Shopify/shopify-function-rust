@@ -2,10 +2,15 @@ use std::io::Write;
 use std::path::Path;
 
 use quote::{quote, ToTokens};
-use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, LitStr, Token};
+use syn::{
+    self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Ident, LitStr, Token,
+};
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionArgs {
+    export: Option<Ident>,
+    query: Option<Ident>,
+    mutation: Option<Ident>,
     query_path: Option<LitStr>,
     schema_path: Option<LitStr>,
     input_stream: Option<Expr>,
@@ -28,7 +33,13 @@ impl Parse for ShopifyFunctionArgs {
         let mut args = Self::default();
         while !input.is_empty() {
             let lookahead = input.lookahead1();
-            if lookahead.peek(kw::query_path) {
+            if lookahead.peek(kw::export) {
+                args.export = Some(Self::parse_expression::<kw::export, Ident>(&input)?);
+            } else if lookahead.peek(kw::query) {
+                args.query = Some(Self::parse_expression::<kw::query, Ident>(&input)?);
+            } else if lookahead.peek(kw::mutation) {
+                args.mutation = Some(Self::parse_expression::<kw::mutation, Ident>(&input)?);
+            } else if lookahead.peek(kw::query_path) {
                 args.query_path = Some(Self::parse_expression::<kw::query_path, LitStr>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
                 args.schema_path = Some(Self::parse_expression::<kw::schema_path, LitStr>(&input)?);
@@ -123,6 +134,9 @@ pub fn shopify_function(
             stream.to_token_stream()
         });
 
+    let export: Ident = args.export.unwrap();
+    let query: Ident = args.query.unwrap();
+    let mutation: Ident = args.mutation.unwrap();
     let query_path: LitStr = args.query_path.unwrap();
     let schema_path: LitStr = args.schema_path.unwrap();
 
@@ -152,7 +166,7 @@ pub fn shopify_function(
             variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
-        struct Input;
+        struct #query;
 
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[graphql(
@@ -162,9 +176,9 @@ pub fn shopify_function(
             variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
-        struct Output;
+        struct #mutation;
 
-        fn main() -> ::shopify_function::Result<()> {
+        fn #export() -> ::shopify_function::Result<()> {
             let mut string = String::new();
             std::io::Read::read_to_string(&mut #input_stream, &mut string)?;
             let input: #input_type = serde_json::from_str(&string)?;
@@ -185,6 +199,9 @@ pub fn shopify_function(
 mod tests {}
 
 mod kw {
+    syn::custom_keyword!(export);
+    syn::custom_keyword!(query);
+    syn::custom_keyword!(mutation);
     syn::custom_keyword!(query_path);
     syn::custom_keyword!(schema_path);
     syn::custom_keyword!(input_stream);
