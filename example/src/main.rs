@@ -59,7 +59,7 @@ fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
             message: None,
             targets,
             value: output::Value::Percentage(output::Percentage {
-                value: config.percentage.to_string(),
+                value: Decimal(config.percentage),
             }),
         }],
         discount_application_strategy: output::DiscountApplicationStrategy::FIRST,
