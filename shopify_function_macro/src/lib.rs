@@ -4,7 +4,7 @@ use std::path::Path;
 use proc_macro2::TokenStream;
 use proc_macro2::TokenTree;
 use quote::{quote, ToTokens};
-use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Token};
+use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, LitStr, Token};
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionArgs {
@@ -115,6 +115,82 @@ pub fn shopify_function(
     gen.into()
 }
 
+#[derive(Clone, Default)]
+struct ShopifyFunctionTargetArgs {
+    query_path: Option<LitStr>,
+    schema_path: Option<LitStr>,
+}
+
+impl ShopifyFunctionTargetArgs {
+    fn parse_literal<T: syn::parse::Parse>(input: &ParseStream<'_>) -> syn::Result<LitStr> {
+        let _ = input.parse::<T>()?;
+        let _ = input.parse::<Token![=]>()?;
+        let value: LitStr = input.parse()?;
+        Ok(value)
+    }
+}
+
+impl Parse for ShopifyFunctionTargetArgs {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut args = Self::default();
+        while !input.is_empty() {
+            let lookahead = input.lookahead1();
+            if lookahead.peek(kw::query_path) {
+                args.query_path = Some(Self::parse_literal::<kw::query_path>(&input)?);
+            } else if lookahead.peek(kw::schema_path) {
+                args.schema_path = Some(Self::parse_literal::<kw::schema_path>(&input)?);
+            } else {
+                // Ignore unknown tokens
+                let _ = input.parse::<proc_macro2::TokenTree>();
+            }
+        }
+        Ok(args)
+    }
+}
+
+#[proc_macro_attribute]
+pub fn shopify_function_target(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let ast: syn::ItemFn = syn::parse(item).unwrap();
+    let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
+
+    let name = &ast.sig.ident;
+
+    let query_path = args
+        .query_path
+        .unwrap_or_else(|| panic!("No value given for query_path"));
+
+    let schema_path = args
+        .schema_path
+        .unwrap_or_else(|| panic!("No value given for schema_path"));
+
+    quote! {
+        pub mod #name {
+            use super::*;
+
+            generate_types!(
+                query_path = #query_path,
+                schema_path = #schema_path,
+            );
+
+            #[shopify_function]
+            pub #ast
+
+            #[no_mangle]
+            #[export_name = #name]
+            pub extern "C" fn export(){
+                main().unwrap();
+                std::io::stdout().flush().unwrap();
+            }
+        }
+
+        #ast
+    }
+    .into()
+}
+
 fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
     let attrs: Vec<TokenTree> = attrs.clone().into_iter().collect();
     let attr_index = attrs
@@ -198,6 +274,8 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
 mod tests {}
 
 mod kw {
+    syn::custom_keyword!(query_path);
+    syn::custom_keyword!(schema_path);
     syn::custom_keyword!(input_stream);
     syn::custom_keyword!(output_stream);
 }

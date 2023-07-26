@@ -1,0 +1,81 @@
+schema {
+  query: Input
+  mutation: MutationRoot
+}
+
+"""
+Exactly one field of input must be provided, and all others omitted.
+"""
+directive @oneOf on INPUT_OBJECT
+
+"""
+Only allow the field to be queried when targeting one of the specified targets.
+"""
+directive @restrictTarget(only: [String!]!) on FIELD_DEFINITION
+
+"""
+Represents a unique identifier, often used to refetch an object.
+The ID type appears in a JSON response as a String, but it is not intended to be human-readable.
+
+Example value: `"gid://shopify/Product/10079785100"`
+"""
+scalar ID
+
+"""
+A void type that can be used to return a null value from a mutation.
+"""
+scalar Void
+
+"""
+The input object for the function.
+"""
+type Input {
+  id: ID!
+  num: Int
+  name: String
+  """
+  The http response of the http request
+  """
+  fetchResult: String! @restrictTarget(only: ["validate"])
+}
+
+"""
+The root mutation for the API.
+"""
+type MutationRoot {
+  """
+  Handles the function result for the fetch target.
+  """
+  fetch(result: FunctionFetchResult!): Void!
+
+  """
+  Handles the function result for the validate target.
+  """
+  handleResult(result: FunctionResult!): Void!
+
+  """
+  Handles the function result for the validate target.
+  """
+  validate(result: FunctionValidateResult!): Void!
+}
+
+"""
+The result of a fetch function.
+"""
+input FunctionFetchResult {
+  request: String!
+}
+
+"""
+The result of the function.
+"""
+input FunctionResult {
+  errors: [String!]!
+}
+
+"""
+The result of the function.
+"""
+input FunctionValidateResult {
+  errors: [String!]!
+}
