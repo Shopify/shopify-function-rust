@@ -17,6 +17,9 @@ impl ShopifyFunctionArgs {
         let _ = input.parse::<T>()?;
         let _ = input.parse::<Token![=]>()?;
         let value: Expr = input.parse()?;
+        if input.lookahead1().peek(Token![,]) {
+            input.parse::<Token![,]>()?;
+        }
         Ok(value)
     }
 }
@@ -30,9 +33,6 @@ impl Parse for ShopifyFunctionArgs {
                 args.input_stream = Some(Self::parse_expression::<kw::input_stream>(&input)?);
             } else if lookahead.peek(kw::output_stream) {
                 args.output_stream = Some(Self::parse_expression::<kw::output_stream>(&input)?);
-            } else {
-                // Ignore unknown tokens
-                let _ = input.parse::<proc_macro2::TokenTree>();
             }
         }
         Ok(args)
@@ -126,6 +126,9 @@ impl ShopifyFunctionTargetArgs {
         let _ = input.parse::<T>()?;
         let _ = input.parse::<Token![=]>()?;
         let value: LitStr = input.parse()?;
+        if input.lookahead1().peek(Token![,]) {
+            input.parse::<Token![,]>()?;
+        }
         Ok(value)
     }
 }
@@ -139,9 +142,6 @@ impl Parse for ShopifyFunctionTargetArgs {
                 args.query_path = Some(Self::parse_literal::<kw::query_path>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
                 args.schema_path = Some(Self::parse_literal::<kw::schema_path>(&input)?);
-            } else {
-                // Ignore unknown tokens
-                let _ = input.parse::<proc_macro2::TokenTree>();
             }
         }
         Ok(args)
@@ -158,13 +158,8 @@ pub fn shopify_function_target(
 
     let name = &ast.sig.ident;
 
-    let query_path = args
-        .query_path
-        .unwrap_or_else(|| panic!("No value given for query_path"));
-
-    let schema_path = args
-        .schema_path
-        .unwrap_or_else(|| panic!("No value given for schema_path"));
+    let query_path = args.query_path.expect("No value given for query_path");
+    let schema_path = args.schema_path.expect("No value given for schema_path");
 
     quote! {
         pub mod #name {
@@ -172,7 +167,7 @@ pub fn shopify_function_target(
 
             generate_types!(
                 query_path = #query_path,
-                schema_path = #schema_path,
+                schema_path = #schema_path
             );
 
             #[shopify_function]
@@ -185,8 +180,6 @@ pub fn shopify_function_target(
                 std::io::stdout().flush().unwrap();
             }
         }
-
-        #ast
     }
     .into()
 }
