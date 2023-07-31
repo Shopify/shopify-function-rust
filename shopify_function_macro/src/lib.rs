@@ -119,6 +119,8 @@ pub fn shopify_function(
 struct ShopifyFunctionTargetArgs {
     query_path: Option<LitStr>,
     schema_path: Option<LitStr>,
+    input_stream: Option<Expr>,
+    output_stream: Option<Expr>,
 }
 
 impl ShopifyFunctionTargetArgs {
@@ -142,6 +144,14 @@ impl Parse for ShopifyFunctionTargetArgs {
                 args.query_path = Some(Self::parse_literal::<kw::query_path>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
                 args.schema_path = Some(Self::parse_literal::<kw::schema_path>(&input)?);
+            } else if lookahead.peek(kw::input_stream) {
+                args.input_stream = Some(
+                    ShopifyFunctionArgs::parse_expression::<kw::input_stream>(&input)?,
+                );
+            } else if lookahead.peek(kw::output_stream) {
+                args.output_stream = Some(ShopifyFunctionArgs::parse_expression::<
+                    kw::output_stream,
+                >(&input)?);
             }
         }
         Ok(args)
@@ -162,6 +172,17 @@ pub fn shopify_function_target(
     let query_path = args.query_path.expect("No value given for query_path");
     let schema_path = args.schema_path.expect("No value given for schema_path");
 
+    let input_stream = args
+        .input_stream
+        .map_or(quote! { std::io::stdin() }, |stream| {
+            stream.to_token_stream()
+        });
+    let output_stream = args
+        .output_stream
+        .map_or(quote! { std::io::stdout() }, |stream| {
+            stream.to_token_stream()
+        });
+
     quote! {
         pub mod #name {
             use super::*;
@@ -171,14 +192,17 @@ pub fn shopify_function_target(
                 schema_path = #schema_path
             );
 
-            #[shopify_function]
-            pub #ast
+            #[shopify_function(
+                input_stream = #input_stream,
+                output_stream = #output_stream
+            )]
+            #ast
 
             #[no_mangle]
             #[export_name = #name_as_stringlit]
             pub extern "C" fn export() {
                 main().unwrap();
-                std::io::stdout().flush().unwrap();
+                #output_stream.flush().unwrap();
             }
         }
     }
@@ -238,7 +262,7 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
             "
             .as_bytes(),
         )
-        .expect("Could not write to .output.query");
+        .expect(&format!("Could not write to {}", OUTPUT_QUERY_FILE_NAME));
 
     quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
