@@ -1,8 +1,7 @@
 use std::io::Write;
 use std::path::Path;
 
-use proc_macro2::TokenStream;
-use proc_macro2::TokenTree;
+use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
 use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Token};
 
@@ -153,45 +152,49 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let params = TokenStream::from(attr);
 
-    let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let query_path = extract_attr(&params, "query_path");
     let schema_path = extract_attr(&params, "schema_path");
 
-    let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
-    output_query_path.push(OUTPUT_QUERY_FILE_NAME);
-    std::fs::File::create(&output_query_path)
-        .expect("Could not create output query file")
-        .write_all(
-            r"
-                mutation Output($result: FunctionResult!) {
-                    handleResult(result: $result)
-                }
-            "
-            .as_bytes(),
-        )
-        .expect("Could not write to .output.query");
+    let input_struct = generate_struct("Input", &query_path, &schema_path);
+    let output_struct = generate_struct("Output", &OUTPUT_QUERY_FILE_NAME, &schema_path);
+    let output_query =
+        "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
+
+    write_output_query_file(OUTPUT_QUERY_FILE_NAME, output_query);
+
+    quote! {
+        #input_struct
+        #output_struct
+    }
+    .into()
+}
+
+fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStream {
+    let name_ident = Ident::new(name, Span::mixed_site());
 
     quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
-            #params,
-            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
-            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
-            skip_serializing_none
-        )]
-        struct Input;
-
-        #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
-        #[graphql(
-            query_path = #OUTPUT_QUERY_FILE_NAME,
+            query_path = #query_path,
             schema_path = #schema_path,
             response_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
-        struct Output;
+        struct #name_ident;
     }
     .into()
+}
+
+fn write_output_query_file(output_query_file_name: &str, contents: &str) {
+    let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
+    output_query_path.push(output_query_file_name);
+    std::fs::File::create(&output_query_path)
+        .expect("Could not create output query file")
+        .write_all(contents.as_bytes())
+        .expect(&format!("Could not write to {}", output_query_file_name));
 }
 
 #[cfg(test)]
