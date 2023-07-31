@@ -3,7 +3,7 @@ use std::path::Path;
 
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
-use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, Token};
+use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, LitStr, Token};
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionArgs {
@@ -114,6 +114,114 @@ pub fn shopify_function(
     gen.into()
 }
 
+#[derive(Clone, Default)]
+struct ShopifyFunctionTargetArgs {
+    query_path: Option<LitStr>,
+    schema_path: Option<LitStr>,
+    output_result_type: Option<Ident>,
+    input_stream: Option<Expr>,
+    output_stream: Option<Expr>,
+}
+
+impl ShopifyFunctionTargetArgs {
+    fn parse<K: syn::parse::Parse, V: syn::parse::Parse>(input: &ParseStream<'_>) -> syn::Result<V> {
+        let _ = input.parse::<K>()?;
+        let _ = input.parse::<Token![=]>()?;
+        let value: V = input.parse()?;
+        if input.lookahead1().peek(Token![,]) {
+            input.parse::<Token![,]>()?;
+        }
+        Ok(value)
+    }
+}
+
+impl Parse for ShopifyFunctionTargetArgs {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut args = Self::default();
+        while !input.is_empty() {
+            let lookahead = input.lookahead1();
+            if lookahead.peek(kw::query_path) {
+                args.query_path = Some(Self::parse::<kw::query_path, LitStr>(&input)?);
+            } else if lookahead.peek(kw::schema_path) {
+                args.schema_path = Some(Self::parse::<kw::schema_path, LitStr>(&input)?);
+            } else if lookahead.peek(kw::output_result_type) {
+                args.output_result_type = Some(Self::parse::<kw::output_result_type, Ident>(&input)?);
+            } else if lookahead.peek(kw::input_stream) {
+                args.input_stream = Some(
+                    Self::parse::<kw::input_stream, Expr>(&input)?,
+                );
+            } else if lookahead.peek(kw::output_stream) {
+                args.output_stream = Some(
+                    Self::parse::<kw::output_stream, Expr>(&input)?,
+                );
+            }
+        }
+        Ok(args)
+    }
+}
+
+#[proc_macro_attribute]
+pub fn shopify_function_target(
+    attr: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let ast: syn::ItemFn = syn::parse(item).unwrap();
+    let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
+
+    let name = &ast.sig.ident;
+    let name_as_stringlit: String = name.to_string();
+
+    let query_path = args.query_path.expect("No value given for query_path");
+    let schema_path = args.schema_path.expect("No value given for schema_path");
+    let output_query_file_name = format!(".{}{}", name_as_stringlit, OUTPUT_QUERY_FILE_NAME);
+
+    let input_struct = generate_struct("Input", query_path.value().as_str(), schema_path.value().as_str());
+    let output_struct = generate_struct("Output", &output_query_file_name, schema_path.value().as_str());
+    let output_result_type = args.output_result_type.expect("No value given for output_result_type");
+    let output_query = format!(
+        "mutation Output($result: {}!) {{\n    {}(result: $result)\n}}\n",
+        output_result_type,
+        name_as_stringlit
+    );
+
+    write_output_query_file(&output_query_file_name, &output_query);
+
+    let input_stream = args
+        .input_stream
+        .map_or(quote! { std::io::stdin() }, |stream| {
+            stream.to_token_stream()
+        });
+    let output_stream = args
+        .output_stream
+        .map_or(quote! { std::io::stdout() }, |stream| {
+            stream.to_token_stream()
+        });
+
+    quote! {
+        pub mod #name {
+            use super::*;
+            use std::io::Write;
+
+            #input_struct
+            #output_struct
+
+            #[shopify_function(
+                input_stream = #input_stream,
+                output_stream = #output_stream
+            )]
+            pub #ast
+
+            #[no_mangle]
+            #[export_name = #name_as_stringlit]
+            pub extern "C" fn export() {
+                main().unwrap();
+                #output_stream.flush().unwrap();
+            }
+        }
+    }
+    .into()
+}
+
 fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
     let attrs: Vec<TokenTree> = attrs.clone().into_iter().collect();
     let attr_index = attrs
@@ -181,7 +289,7 @@ fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStre
             variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
             skip_serializing_none
         )]
-        struct #name_ident;
+        pub struct #name_ident;
     }
 }
 
@@ -198,6 +306,9 @@ fn write_output_query_file(output_query_file_name: &str, contents: &str) {
 mod tests {}
 
 mod kw {
+    syn::custom_keyword!(query_path);
+    syn::custom_keyword!(schema_path);
+    syn::custom_keyword!(output_result_type);
     syn::custom_keyword!(input_stream);
     syn::custom_keyword!(output_stream);
 }
