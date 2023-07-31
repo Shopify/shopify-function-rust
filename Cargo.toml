@@ -1,6 +1,11 @@
 [workspace]
 
-members = ["example", "shopify_function", "shopify_function_macro"]
+members = [
+    "example",
+    "example_with_targets",
+    "shopify_function",
+    "shopify_function_macro",
+]
 
 [profile.release]
 lto = true
