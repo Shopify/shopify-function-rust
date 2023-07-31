@@ -1,0 +1,71 @@
+schema {
+  query: Input
+  mutation: MutationRoot
+}
+
+"""
+Only allow the field to be queried when targeting one of the specified targets.
+"""
+directive @restrictTarget(only: [String!]!) on FIELD_DEFINITION
+
+"""
+Represents a unique identifier, often used to refetch an object.
+The ID type appears in a JSON response as a String, but it is not intended to be human-readable.
+
+Example value: `"gid://shopify/Product/10079785100"`
+"""
+scalar ID
+
+"""
+A void type that can be used to return a null value from a mutation.
+"""
+scalar Void
+
+"""
+The input object for the function.
+"""
+type Input {
+  id: ID!
+  num: Int
+  name: String
+  aResult: Int @restrictTarget(only: ["api.b"])
+}
+
+"""
+The root mutation for the API.
+"""
+type MutationRoot {
+  """
+  The function for API target A.
+  """
+  a(
+    """
+    The result of calling the function for API target A.
+    """
+    result: FunctionAResult!
+  ): Void!
+
+  """
+  The function for API target B.
+  """
+  b(
+    """
+    The result of calling the function for API target B.
+    """
+    result: FunctionBResult!
+  ): Void!
+}
+
+"""
+The result of API target A.
+"""
+input FunctionAResult {
+  status: Int
+}
+
+"""
+The result of API target B.
+"""
+input FunctionBResult {
+  name: String
+}

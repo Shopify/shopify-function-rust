@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "graphql_client",
@@ -199,7 +199,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_macro"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
