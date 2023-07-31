@@ -170,16 +170,24 @@ pub fn shopify_function_target(
                 schema_path = #schema_path
             );
 
+            pub mod new_input {
+                use super::input::*;
+            }
+            pub mod new_output {
+                use super::output::*;
+            }
+
             #[shopify_function]
             pub #ast
 
             #[no_mangle]
             #[export_name = #name]
-            pub extern "C" fn export(){
+            pub extern "C" fn export() {
                 main().unwrap();
                 std::io::stdout().flush().unwrap();
             }
         }
+        #ast
     }
     .into()
 }
