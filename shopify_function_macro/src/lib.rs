@@ -157,6 +157,7 @@ pub fn shopify_function_target(
     let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
 
     let name = &ast.sig.ident;
+    let name_as_stringlit: String = name.to_string();
 
     let query_path = args.query_path.expect("No value given for query_path");
     let schema_path = args.schema_path.expect("No value given for schema_path");
@@ -170,24 +171,16 @@ pub fn shopify_function_target(
                 schema_path = #schema_path
             );
 
-            pub mod new_input {
-                use super::input::*;
-            }
-            pub mod new_output {
-                use super::output::*;
-            }
-
             #[shopify_function]
             pub #ast
 
             #[no_mangle]
-            #[export_name = #name]
+            #[export_name = #name_as_stringlit]
             pub extern "C" fn export() {
                 main().unwrap();
                 std::io::stdout().flush().unwrap();
             }
         }
-        #ast
     }
     .into()
 }
