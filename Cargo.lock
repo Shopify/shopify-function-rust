@@ -50,6 +50,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_with_targets"
+version = "1.0.0"
+dependencies = [
+ "graphql_client",
+ "serde",
+ "serde_json",
+ "shopify_function",
+]
+
+[[package]]
 name = "graphql-introspection-query"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

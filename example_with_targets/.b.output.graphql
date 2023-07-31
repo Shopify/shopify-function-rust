@@ -1,0 +1,3 @@
+mutation Output($result: FunctionBResult!) {
+    b(result: $result)
+}

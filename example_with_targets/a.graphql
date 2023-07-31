@@ -1,0 +1,5 @@
+query Input {
+  id
+  num
+  name
+}
