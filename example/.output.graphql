@@ -1,5 +1,3 @@
-
-                mutation Output($result: FunctionResult!) {
-                    handleResult(result: $result)
-                }
-            
+mutation Output($result: FunctionResult!) {
+    handleResult(result: $result)
+}
