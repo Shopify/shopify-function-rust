@@ -156,7 +156,7 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let schema_path = extract_attr(&params, "schema_path");
 
     let input_struct = generate_struct("Input", &query_path, &schema_path);
-    let output_struct = generate_struct("Output", &OUTPUT_QUERY_FILE_NAME, &schema_path);
+    let output_struct = generate_struct("Output", OUTPUT_QUERY_FILE_NAME, &schema_path);
     let output_query =
         "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
 
@@ -174,7 +174,6 @@ fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStre
 
     quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
-        #[serde(rename_all(deserialize = "camelCase"))]
         #[graphql(
             query_path = #query_path,
             schema_path = #schema_path,
@@ -184,17 +183,15 @@ fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStre
         )]
         struct #name_ident;
     }
-    .into()
 }
 
 fn write_output_query_file(output_query_file_name: &str, contents: &str) {
     let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let mut output_query_path = Path::new(&cargo_manifest_dir).to_path_buf();
-    output_query_path.push(output_query_file_name);
-    std::fs::File::create(&output_query_path)
+    let output_query_path = Path::new(&cargo_manifest_dir).join(output_query_file_name);
+    std::fs::File::create(output_query_path)
         .expect("Could not create output query file")
         .write_all(contents.as_bytes())
-        .expect(&format!("Could not write to {}", output_query_file_name));
+        .unwrap_or_else(|_| panic!("Could not write to {}", output_query_file_name));
 }
 
 #[cfg(test)]
