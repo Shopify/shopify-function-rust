@@ -1,14 +1,16 @@
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
+// Implicit export = "target_a"
 #[shopify_function_target(query_path = "a.graphql", schema_path = "schema.graphql")]
-fn a(_input: input::ResponseData) -> Result<output::FunctionAResult> {
-    Ok(output::FunctionAResult { status: Some(200) })
+fn target_a(_input: target_a::input::ResponseData) -> Result<target_a::output::FunctionTargetAResult> {
+    Ok(target_a::output::FunctionTargetAResult { status: Some(200) })
 }
 
-#[shopify_function_target(query_path = "b.graphql", schema_path = "schema.graphql")]
-fn b(input: input::ResponseData) -> Result<output::FunctionBResult> {
-    Ok(output::FunctionBResult {
+// Explicit export = "target_b"
+#[shopify_function_target(export = "target_b", query_path = "b.graphql", schema_path = "schema.graphql")]
+fn function_b(input: target_b::input::ResponseData) -> Result<target_b::output::FunctionTargetBResult> {
+    Ok(target_b::output::FunctionTargetBResult {
         name: Some(format!("new name: \"{}\"", input.id)),
     })
 }

@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::path::Path;
+use convert_case::{Case, Casing};
 
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
@@ -13,8 +14,8 @@ struct ShopifyFunctionArgs {
 
 impl ShopifyFunctionArgs {
     fn parse_expression<T: syn::parse::Parse>(input: &ParseStream<'_>) -> syn::Result<Expr> {
-        let _ = input.parse::<T>()?;
-        let _ = input.parse::<Token![=]>()?;
+        input.parse::<T>()?;
+        input.parse::<Token![=]>()?;
         let value: Expr = input.parse()?;
         Ok(value)
     }
@@ -70,7 +71,7 @@ pub fn shopify_function(
     attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let ast: syn::ItemFn = syn::parse(item).unwrap();
+    let ast = parse_macro_input!(item as syn::ItemFn);
     let args = parse_macro_input!(attr as ShopifyFunctionArgs);
 
     let name = &ast.sig.ident;
@@ -116,6 +117,7 @@ pub fn shopify_function(
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionTargetArgs {
+    export: Option<LitStr>,
     query_path: Option<LitStr>,
     schema_path: Option<LitStr>,
     input_stream: Option<Expr>,
@@ -126,8 +128,8 @@ impl ShopifyFunctionTargetArgs {
     fn parse<K: syn::parse::Parse, V: syn::parse::Parse>(
         input: &ParseStream<'_>,
     ) -> syn::Result<V> {
-        let _ = input.parse::<K>()?;
-        let _ = input.parse::<Token![=]>()?;
+        input.parse::<K>()?;
+        input.parse::<Token![=]>()?;
         let value: V = input.parse()?;
         if input.lookahead1().peek(Token![,]) {
             input.parse::<Token![,]>()?;
@@ -141,7 +143,12 @@ impl Parse for ShopifyFunctionTargetArgs {
         let mut args = Self::default();
         while !input.is_empty() {
             let lookahead = input.lookahead1();
-            if lookahead.peek(kw::query_path) {
+            if lookahead.peek(kw::export) {
+                args.export = match Self::parse::<kw::export, LitStr>(&input) {
+                    Ok(export) => Some(export),
+                    _ => None,
+                };
+            } else if lookahead.peek(kw::query_path) {
                 args.query_path = Some(Self::parse::<kw::query_path, LitStr>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
                 args.schema_path = Some(Self::parse::<kw::schema_path, LitStr>(&input)?);
@@ -161,14 +168,14 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> &syn::Ident {
     use syn::*;
 
     let ReturnType::Type(_arrow, ty) = &ast.sig.output else {
-        panic!("Shopify Function require an explicit return type")
+        panic!("Shopify Functions require an explicit return type")
     };
     let Type::Path(path) = ty.as_ref() else {
         panic!("Shopify Functions must return a Result")
     };
     let result = path.path.segments.last().unwrap();
     assert!(
-        result.ident.to_string() == "Result",
+        result.ident == "Result",
         "Shopify Functions must return a Result"
     );
     let PathArguments::AngleBracketed(generics) = &result.arguments else {
@@ -192,15 +199,16 @@ pub fn shopify_function_target(
     attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let ast: syn::ItemFn = syn::parse(item).unwrap();
+    let ast = parse_macro_input!(item as syn::ItemFn);
     let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
 
     let name = &ast.sig.ident;
-    let name_as_stringlit: String = name.to_string();
+    let export_ident = args.export.map_or(name.clone(), |export| Ident::new(export.value().as_str(), Span::mixed_site()));
+    let export_string = export_ident.to_string();
 
     let query_path = args.query_path.expect("No value given for query_path");
     let schema_path = args.schema_path.expect("No value given for schema_path");
-    let output_query_file_name = format!(".{}{}", name_as_stringlit, OUTPUT_QUERY_FILE_NAME);
+    let output_query_file_name = format!(".{}{}", &export_string, OUTPUT_QUERY_FILE_NAME);
 
     let input_struct = generate_struct(
         "Input",
@@ -217,7 +225,7 @@ pub fn shopify_function_target(
         .to_string();
     let output_query = format!(
         "mutation Output($result: {}!) {{\n    {}(result: $result)\n}}\n",
-        output_result_type, name_as_stringlit
+        output_result_type, &export_string.to_case(Case::Camel)
     );
 
     write_output_query_file(&output_query_file_name, &output_query);
@@ -234,7 +242,7 @@ pub fn shopify_function_target(
         });
 
     quote! {
-        pub mod #name {
+        pub mod #export_ident {
             use super::*;
             use std::io::Write;
 
@@ -245,15 +253,16 @@ pub fn shopify_function_target(
                 input_stream = #input_stream,
                 output_stream = #output_stream
             )]
-            pub #ast
+            #ast
 
-            #[no_mangle]
-            #[export_name = #name_as_stringlit]
+            #[export_name = #export_string]
             pub extern "C" fn export() {
                 main().unwrap();
                 #output_stream.flush().unwrap();
             }
         }
+        #[allow(dead_code)]
+        #ast
     }
     .into()
 }
@@ -342,6 +351,7 @@ fn write_output_query_file(output_query_file_name: &str, contents: &str) {
 mod tests {}
 
 mod kw {
+    syn::custom_keyword!(export);
     syn::custom_keyword!(query_path);
     syn::custom_keyword!(schema_path);
     syn::custom_keyword!(input_stream);

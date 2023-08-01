@@ -28,7 +28,7 @@ type Input {
   id: ID!
   num: Int
   name: String
-  aResult: Int @restrictTarget(only: ["api.b"])
+  targetAResult: Int @restrictTarget(only: ["test.target-b"])
 }
 
 """
@@ -38,34 +38,34 @@ type MutationRoot {
   """
   The function for API target A.
   """
-  a(
+  targetA(
     """
     The result of calling the function for API target A.
     """
-    result: FunctionAResult!
+    result: FunctionTargetAResult!
   ): Void!
 
   """
   The function for API target B.
   """
-  b(
+  targetB(
     """
     The result of calling the function for API target B.
     """
-    result: FunctionBResult!
+    result: FunctionTargetBResult!
   ): Void!
 }
 
 """
 The result of API target A.
 """
-input FunctionAResult {
+input FunctionTargetAResult {
   status: Int
 }
 
 """
 The result of API target B.
 """
-input FunctionBResult {
+input FunctionTargetBResult {
   name: String
 }

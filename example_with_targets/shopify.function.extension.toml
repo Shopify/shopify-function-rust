@@ -1,0 +1,15 @@
+name = "example-with-targets"
+type = "test_api"
+api_version = "unstable"
+
+[build]
+command = "cargo wasi build --release"
+path = "target/wasm32-wasi/release/example-with-targets.wasm"
+
+[[targeting]]
+target = "test.target-a"
+input_query = "a.graphql"
+
+[[targeting]]
+target = "test.target-b"
+input_query = "b.graphql"
