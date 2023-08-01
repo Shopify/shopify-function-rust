@@ -118,13 +118,14 @@ pub fn shopify_function(
 struct ShopifyFunctionTargetArgs {
     query_path: Option<LitStr>,
     schema_path: Option<LitStr>,
-    output_result_type: Option<Ident>,
     input_stream: Option<Expr>,
     output_stream: Option<Expr>,
 }
 
 impl ShopifyFunctionTargetArgs {
-    fn parse<K: syn::parse::Parse, V: syn::parse::Parse>(input: &ParseStream<'_>) -> syn::Result<V> {
+    fn parse<K: syn::parse::Parse, V: syn::parse::Parse>(
+        input: &ParseStream<'_>,
+    ) -> syn::Result<V> {
         let _ = input.parse::<K>()?;
         let _ = input.parse::<Token![=]>()?;
         let value: V = input.parse()?;
@@ -144,20 +145,46 @@ impl Parse for ShopifyFunctionTargetArgs {
                 args.query_path = Some(Self::parse::<kw::query_path, LitStr>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
                 args.schema_path = Some(Self::parse::<kw::schema_path, LitStr>(&input)?);
-            } else if lookahead.peek(kw::output_result_type) {
-                args.output_result_type = Some(Self::parse::<kw::output_result_type, Ident>(&input)?);
             } else if lookahead.peek(kw::input_stream) {
-                args.input_stream = Some(
-                    Self::parse::<kw::input_stream, Expr>(&input)?,
-                );
+                args.input_stream = Some(Self::parse::<kw::input_stream, Expr>(&input)?);
             } else if lookahead.peek(kw::output_stream) {
-                args.output_stream = Some(
-                    Self::parse::<kw::output_stream, Expr>(&input)?,
-                );
+                args.output_stream = Some(Self::parse::<kw::output_stream, Expr>(&input)?);
+            } else {
+                panic!("Unknown shopify_function_target parameter");
             }
         }
         Ok(args)
     }
+}
+
+fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> &syn::Ident {
+    use syn::*;
+
+    let ReturnType::Type(_arrow, ty) = &ast.sig.output else {
+        panic!("Shopify Function require an explicit return type")
+    };
+    let Type::Path(path) = ty.as_ref() else {
+        panic!("Shopify Functions must return a Result")
+    };
+    let result = path.path.segments.last().unwrap();
+    assert!(
+        result.ident.to_string() == "Result",
+        "Shopify Functions must return a Result"
+    );
+    let PathArguments::AngleBracketed(generics) = &result.arguments else {
+        panic!("Shopify Function Result is missing generic arguments")
+    };
+    assert!(
+        generics.args.len() == 1,
+        "Shopify Function Result takes exactly one generic argument"
+    );
+    let GenericArgument::Type(ty) = generics.args.first().unwrap() else {
+        panic!("Shopify Function Result expects a type")
+    };
+    let Type::Path(path) = ty else {
+        panic!("Unexpected result type for Shopify Function Result")
+    };
+    &path.path.segments.last().as_ref().unwrap().ident
 }
 
 #[proc_macro_attribute]
@@ -175,13 +202,22 @@ pub fn shopify_function_target(
     let schema_path = args.schema_path.expect("No value given for schema_path");
     let output_query_file_name = format!(".{}{}", name_as_stringlit, OUTPUT_QUERY_FILE_NAME);
 
-    let input_struct = generate_struct("Input", query_path.value().as_str(), schema_path.value().as_str());
-    let output_struct = generate_struct("Output", &output_query_file_name, schema_path.value().as_str());
-    let output_result_type = args.output_result_type.expect("No value given for output_result_type");
+    let input_struct = generate_struct(
+        "Input",
+        query_path.value().as_str(),
+        schema_path.value().as_str(),
+    );
+    let output_struct = generate_struct(
+        "Output",
+        &output_query_file_name,
+        schema_path.value().as_str(),
+    );
+    let output_result_type = extract_shopify_function_return_type(&ast)
+        .to_token_stream()
+        .to_string();
     let output_query = format!(
         "mutation Output($result: {}!) {{\n    {}(result: $result)\n}}\n",
-        output_result_type,
-        name_as_stringlit
+        output_result_type, name_as_stringlit
     );
 
     write_output_query_file(&output_query_file_name, &output_query);
@@ -308,7 +344,6 @@ mod tests {}
 mod kw {
     syn::custom_keyword!(query_path);
     syn::custom_keyword!(schema_path);
-    syn::custom_keyword!(output_result_type);
     syn::custom_keyword!(input_stream);
     syn::custom_keyword!(output_stream);
 }
