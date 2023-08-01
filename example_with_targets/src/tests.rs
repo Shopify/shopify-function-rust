@@ -13,9 +13,7 @@ fn test_a() -> Result<()> {
             }
         "#,
     )?;
-    let expected = crate::a::output::FunctionAResult {
-        status: Some(200),
-    };
+    let expected = crate::a::output::FunctionAResult { status: Some(200) };
     assert_eq!(result, expected);
     Ok(())
 }

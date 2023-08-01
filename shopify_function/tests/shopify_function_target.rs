@@ -19,14 +19,11 @@ fn test_a_export() {
 #[shopify_function_target(
   query_path = "./tests/fixtures/input.graphql",
   schema_path = "./tests/fixtures/schema_with_targets.graphql",
-  output_result_type = FunctionAResult,
   input_stream = std::io::Cursor::new(A_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut A_OUTPUT }
 )]
 fn a(_input: input::ResponseData) -> Result<output::FunctionAResult> {
-    Ok(output::FunctionAResult {
-        status: Some(200),
-    })
+    Ok(output::FunctionAResult { status: Some(200) })
 }
 
 const B_INPUT: &str = r#"{
@@ -46,7 +43,6 @@ fn test_b_export() {
 #[shopify_function_target(
   query_path = "./tests/fixtures/b.graphql",
   schema_path = "./tests/fixtures/schema_with_targets.graphql",
-  output_result_type = FunctionBResult,
   input_stream = std::io::Cursor::new(B_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut B_OUTPUT }
 )]
