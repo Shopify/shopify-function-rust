@@ -1,6 +1,6 @@
+use convert_case::{Case, Casing};
 use std::io::Write;
 use std::path::Path;
-use convert_case::{Case, Casing};
 
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::{quote, ToTokens};
@@ -164,34 +164,38 @@ impl Parse for ShopifyFunctionTargetArgs {
     }
 }
 
-fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> &syn::Ident {
+fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident, syn::Error> {
     use syn::*;
 
     let ReturnType::Type(_arrow, ty) = &ast.sig.output else {
-        panic!("Shopify Functions require an explicit return type")
+        return Err(Error::new_spanned(&ast.sig, "Shopify Functions require an explicit return type"))
     };
     let Type::Path(path) = ty.as_ref() else {
-        panic!("Shopify Functions must return a Result")
+        return Err(Error::new_spanned(&ast.sig, "Shopify Functions must return a Result"))
     };
     let result = path.path.segments.last().unwrap();
-    assert!(
-        result.ident == "Result",
-        "Shopify Functions must return a Result"
-    );
+    if result.ident != "Result" {
+        return Err(Error::new_spanned(
+            result,
+            "Shopify Functions must return a Result",
+        ));
+    }
     let PathArguments::AngleBracketed(generics) = &result.arguments else {
-        panic!("Shopify Function Result is missing generic arguments")
+        return Err(Error::new_spanned(result, "Shopify Function Result is missing generic arguments"))
     };
-    assert!(
-        generics.args.len() == 1,
-        "Shopify Function Result takes exactly one generic argument"
-    );
+    if generics.args.len() != 1 {
+        return Err(Error::new_spanned(
+            generics,
+            "Shopify Function Result takes exactly one generic argument",
+        ));
+    }
     let GenericArgument::Type(ty) = generics.args.first().unwrap() else {
-        panic!("Shopify Function Result expects a type")
+        return Err(Error::new_spanned(generics, "Shopify Function Result expects a type"))
     };
     let Type::Path(path) = ty else {
-        panic!("Unexpected result type for Shopify Function Result")
+        return Err(Error::new_spanned(result, "Unexpected result type for Shopify Function Result"))
     };
-    &path.path.segments.last().as_ref().unwrap().ident
+    Ok(&path.path.segments.last().as_ref().unwrap().ident)
 }
 
 #[proc_macro_attribute]
@@ -203,7 +207,9 @@ pub fn shopify_function_target(
     let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
 
     let name = &ast.sig.ident;
-    let export_ident = args.export.map_or(name.clone(), |export| Ident::new(export.value().as_str(), Span::mixed_site()));
+    let export_ident = args.export.map_or(name.clone(), |export| {
+        Ident::new(export.value().as_str(), Span::mixed_site())
+    });
     let export_string = export_ident.to_string();
 
     let query_path = args.query_path.expect("No value given for query_path");
@@ -220,12 +226,17 @@ pub fn shopify_function_target(
         &output_query_file_name,
         schema_path.value().as_str(),
     );
+    if let Err(error) = extract_shopify_function_return_type(&ast) {
+        return error.to_compile_error().into();
+    }
     let output_result_type = extract_shopify_function_return_type(&ast)
+        .unwrap()
         .to_token_stream()
         .to_string();
     let output_query = format!(
         "mutation Output($result: {}!) {{\n    {}(result: $result)\n}}\n",
-        output_result_type, &export_string.to_case(Case::Camel)
+        output_result_type,
+        &export_string.to_case(Case::Camel)
     );
 
     write_output_query_file(&output_query_file_name, &output_query);

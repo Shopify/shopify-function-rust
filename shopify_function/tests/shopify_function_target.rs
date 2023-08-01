@@ -23,7 +23,9 @@ fn test_target_a_export() {
   input_stream = std::io::Cursor::new(TARGET_A_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut TARGET_A_OUTPUT }
 )]
-fn target_a(_input: target_a::input::ResponseData) -> Result<target_a::output::FunctionTargetAResult> {
+fn target_a(
+    _input: target_a::input::ResponseData,
+) -> Result<target_a::output::FunctionTargetAResult> {
     Ok(target_a::output::FunctionTargetAResult { status: Some(200) })
 }
 
@@ -48,7 +50,9 @@ fn test_target_b_export() {
   input_stream = std::io::Cursor::new(TARGET_B_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut TARGET_B_OUTPUT }
 )]
-fn some_function(input: target_b::input::ResponseData) -> Result<target_b::output::FunctionTargetBResult> {
+fn some_function(
+    input: target_b::input::ResponseData,
+) -> Result<target_b::output::FunctionTargetBResult> {
     Ok(target_b::output::FunctionTargetBResult {
         name: Some(format!("new name: {}", input.id)),
     })
