@@ -144,10 +144,7 @@ impl Parse for ShopifyFunctionTargetArgs {
         while !input.is_empty() {
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::export) {
-                args.export = match Self::parse::<kw::export, LitStr>(&input) {
-                    Ok(export) => Some(export),
-                    _ => None,
-                };
+                args.export = Some(Self::parse::<kw::export, LitStr>(&input)?);
             } else if lookahead.peek(kw::query_path) {
                 args.query_path = Some(Self::parse::<kw::query_path, LitStr>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
@@ -264,7 +261,7 @@ pub fn shopify_function_target(
                 input_stream = #input_stream,
                 output_stream = #output_stream
             )]
-            #ast
+            pub #ast
 
             #[export_name = #export_string]
             pub extern "C" fn export() {
@@ -272,8 +269,7 @@ pub fn shopify_function_target(
                 #output_stream.flush().unwrap();
             }
         }
-        #[allow(dead_code)]
-        #ast
+        pub use #export_ident::#name;
     }
     .into()
 }
