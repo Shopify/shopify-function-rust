@@ -117,7 +117,7 @@ pub fn shopify_function(
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionTargetArgs {
-    export: Option<LitStr>,
+    target: Option<LitStr>,
     module_name: Option<LitStr>,
     query_path: Option<LitStr>,
     schema_path: Option<LitStr>,
@@ -144,8 +144,8 @@ impl Parse for ShopifyFunctionTargetArgs {
         let mut args = Self::default();
         while !input.is_empty() {
             let lookahead = input.lookahead1();
-            if lookahead.peek(kw::export) {
-                args.export = Some(Self::parse::<kw::export, LitStr>(&input)?);
+            if lookahead.peek(kw::target) {
+                args.target = Some(Self::parse::<kw::target, LitStr>(&input)?);
             } else if lookahead.peek(kw::module_name) {
                 args.module_name = Some(Self::parse::<kw::module_name, LitStr>(&input)?);
             } else if lookahead.peek(kw::query_path) {
@@ -207,13 +207,26 @@ pub fn shopify_function_target(
     let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
 
     let function_name = &ast.sig.ident;
-    let export = args.export.map_or(function_name.clone(), |export| { ident(&export) } );
-    let export_string = export.to_string();
-    let module_name = args.module_name.map_or(export, |module_name| { ident(&module_name) });
+    let function_name_string = function_name.to_string();
+    let target_handle_string = args.target.map_or(function_name_string.clone(), |target| {
+        target
+            .value()
+            .to_string()
+            .split('.')
+            .collect::<Vec<&str>>()
+            .last()
+            .unwrap()
+            .to_string()
+            .to_case(Case::Snake)
+    });
+    let module_name = args.module_name.map_or(
+        Ident::new(&target_handle_string, Span::mixed_site()),
+        |module_name| Ident::new(module_name.value().as_str(), Span::mixed_site()),
+    );
 
     let query_path = args.query_path.expect("No value given for query_path");
     let schema_path = args.schema_path.expect("No value given for schema_path");
-    let output_query_file_name = format!(".{}{}", &export_string, OUTPUT_QUERY_FILE_NAME);
+    let output_query_file_name = format!(".{}{}", &target_handle_string, OUTPUT_QUERY_FILE_NAME);
 
     let input_struct = generate_struct(
         "Input",
@@ -235,7 +248,7 @@ pub fn shopify_function_target(
     let output_query = format!(
         "mutation Output($result: {}!) {{\n    {}(result: $result)\n}}\n",
         output_result_type,
-        &export_string.to_case(Case::Camel)
+        &target_handle_string.to_case(Case::Camel)
     );
 
     write_output_query_file(&output_query_file_name, &output_query);
@@ -265,7 +278,7 @@ pub fn shopify_function_target(
             )]
             pub #ast
 
-            #[export_name = #export_string]
+            #[export_name = #function_name_string]
             pub extern "C" fn export() {
                 main().unwrap();
                 #output_stream.flush().unwrap();
@@ -274,10 +287,6 @@ pub fn shopify_function_target(
         pub use #module_name::#function_name;
     }
     .into()
-}
-
-fn ident(lit_str: &LitStr) -> Ident {
-    Ident::new(lit_str.value().as_str(), Span::mixed_site())
 }
 
 fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
@@ -364,7 +373,7 @@ fn write_output_query_file(output_query_file_name: &str, contents: &str) {
 mod tests {}
 
 mod kw {
-    syn::custom_keyword!(export);
+    syn::custom_keyword!(target);
     syn::custom_keyword!(module_name);
     syn::custom_keyword!(query_path);
     syn::custom_keyword!(schema_path);

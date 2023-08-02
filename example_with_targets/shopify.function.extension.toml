@@ -12,4 +12,5 @@ input_query = "a.graphql"
 
 [[targeting]]
 target = "test.target-b"
+export = "function_b"
 input_query = "b.graphql"

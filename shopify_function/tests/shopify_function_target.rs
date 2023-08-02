@@ -17,7 +17,7 @@ fn test_target_a_export() {
 }
 
 #[shopify_function_target(
-  // Implicit export = "target_a"
+  // Implicit target = "test.target-a"
   query_path = "./tests/fixtures/input.graphql",
   schema_path = "./tests/fixtures/schema_with_targets.graphql",
   input_stream = std::io::Cursor::new(TARGET_A_INPUT.as_bytes().to_vec()),
@@ -44,7 +44,7 @@ fn test_mod_b_export() {
 }
 
 #[shopify_function_target(
-  export = "target_b",
+  target = "test.target-b",
   module_name = "mod_b",
   query_path = "./tests/fixtures/b.graphql",
   schema_path = "./tests/fixtures/schema_with_targets.graphql",
