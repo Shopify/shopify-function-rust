@@ -12,13 +12,14 @@ fn target_a(
 // Explicit export = "target_b"
 #[shopify_function_target(
     export = "target_b",
+    module_name = "mod_b",
     query_path = "b.graphql",
     schema_path = "schema.graphql"
 )]
 fn function_b(
-    input: target_b::input::ResponseData,
-) -> Result<target_b::output::FunctionTargetBResult> {
-    Ok(target_b::output::FunctionTargetBResult {
+    input: mod_b::input::ResponseData,
+) -> Result<mod_b::output::FunctionTargetBResult> {
+    Ok(mod_b::output::FunctionTargetBResult {
         name: Some(format!("new name: \"{}\"", input.id)),
     })
 }

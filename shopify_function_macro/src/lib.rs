@@ -118,6 +118,7 @@ pub fn shopify_function(
 #[derive(Clone, Default)]
 struct ShopifyFunctionTargetArgs {
     export: Option<LitStr>,
+    module_name: Option<LitStr>,
     query_path: Option<LitStr>,
     schema_path: Option<LitStr>,
     input_stream: Option<Expr>,
@@ -145,6 +146,8 @@ impl Parse for ShopifyFunctionTargetArgs {
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::export) {
                 args.export = Some(Self::parse::<kw::export, LitStr>(&input)?);
+            } else if lookahead.peek(kw::module_name) {
+                args.module_name = Some(Self::parse::<kw::module_name, LitStr>(&input)?);
             } else if lookahead.peek(kw::query_path) {
                 args.query_path = Some(Self::parse::<kw::query_path, LitStr>(&input)?);
             } else if lookahead.peek(kw::schema_path) {
@@ -203,11 +206,10 @@ pub fn shopify_function_target(
     let ast = parse_macro_input!(item as syn::ItemFn);
     let args = parse_macro_input!(attr as ShopifyFunctionTargetArgs);
 
-    let name = &ast.sig.ident;
-    let export_ident = args.export.map_or(name.clone(), |export| {
-        Ident::new(export.value().as_str(), Span::mixed_site())
-    });
-    let export_string = export_ident.to_string();
+    let function_name = &ast.sig.ident;
+    let export = args.export.map_or(function_name.clone(), |export| { ident(&export) } );
+    let export_string = export.to_string();
+    let module_name = args.module_name.map_or(export, |module_name| { ident(&module_name) });
 
     let query_path = args.query_path.expect("No value given for query_path");
     let schema_path = args.schema_path.expect("No value given for schema_path");
@@ -250,7 +252,7 @@ pub fn shopify_function_target(
         });
 
     quote! {
-        pub mod #export_ident {
+        pub mod #module_name {
             use super::*;
             use std::io::Write;
 
@@ -269,9 +271,13 @@ pub fn shopify_function_target(
                 #output_stream.flush().unwrap();
             }
         }
-        pub use #export_ident::#name;
+        pub use #module_name::#function_name;
     }
     .into()
+}
+
+fn ident(lit_str: &LitStr) -> Ident {
+    Ident::new(lit_str.value().as_str(), Span::mixed_site())
 }
 
 fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
@@ -359,6 +365,7 @@ mod tests {}
 
 mod kw {
     syn::custom_keyword!(export);
+    syn::custom_keyword!(module_name);
     syn::custom_keyword!(query_path);
     syn::custom_keyword!(schema_path);
     syn::custom_keyword!(input_stream);

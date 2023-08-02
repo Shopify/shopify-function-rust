@@ -29,7 +29,7 @@ fn test_function_b() -> Result<()> {
             }
         "#,
     )?;
-    let expected = crate::target_b::output::FunctionTargetBResult {
+    let expected = crate::mod_b::output::FunctionTargetBResult {
         name: Some("new name: \"gid://shopify/Order/1234567890\"".to_string()),
     };
 

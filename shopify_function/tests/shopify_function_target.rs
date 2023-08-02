@@ -36,24 +36,25 @@ const TARGET_B_INPUT: &str = r#"{
 static mut TARGET_B_OUTPUT: Vec<u8> = vec![];
 
 #[test]
-fn test_target_b_export() {
+fn test_mod_b_export() {
     let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890"}"#;
-    target_b::export();
+    mod_b::export();
     let actual_result = std::str::from_utf8(unsafe { TARGET_B_OUTPUT.as_slice() }).unwrap();
     assert_eq!(actual_result, expected_result);
 }
 
 #[shopify_function_target(
   export = "target_b",
+  module_name = "mod_b",
   query_path = "./tests/fixtures/b.graphql",
   schema_path = "./tests/fixtures/schema_with_targets.graphql",
   input_stream = std::io::Cursor::new(TARGET_B_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut TARGET_B_OUTPUT }
 )]
 fn some_function(
-    input: target_b::input::ResponseData,
-) -> Result<target_b::output::FunctionTargetBResult> {
-    Ok(target_b::output::FunctionTargetBResult {
+    input: mod_b::input::ResponseData,
+) -> Result<mod_b::output::FunctionTargetBResult> {
+    Ok(mod_b::output::FunctionTargetBResult {
         name: Some(format!("new name: {}", input.id)),
     })
 }
