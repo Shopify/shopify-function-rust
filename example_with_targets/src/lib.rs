@@ -2,7 +2,7 @@ use shopify_function::prelude::*;
 use shopify_function::Result;
 
 #[shopify_function_target(
-    // Implicit target = "api.target-a"
+    // Implicit target = "example.target-a"
     // Implicit generated module name = "target_a"
     query_path = "a.graphql",
     schema_path = "schema.graphql"
@@ -15,7 +15,7 @@ fn target_a(
 
 #[shopify_function_target(
     // Explicit target if function name does not match target handle
-    target = "api.target-b",
+    target = "example.target-b",
     // Override generated module name
     module_name = "mod_b",
     query_path = "b.graphql",
