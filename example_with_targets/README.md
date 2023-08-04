@@ -139,7 +139,7 @@ Each target will have an `.output.graphql` file prefixed with the target handle 
 Target handle (`snake_case`) | Output file | GraphQL mutation
 -- | -- | --
 `target_a` | `.target_a.output.graphql` | `mutation Output($result: FunctionTargetAResult!) { targetA(result: $result) }`
-`target_b` | `.target_a.output.graphql` | `mutation Output($result: FunctionTargetBResult!) { targetB(result: $result) }`
+`target_b` | `.target_b.output.graphql` | `mutation Output($result: FunctionTargetBResult!) { targetB(result: $result) }`
 
 If the Rust function name does not match the target handle as `snake_case`, the `target` argument must be provided to `shopify_function_target` to generate the `output` types.
 
