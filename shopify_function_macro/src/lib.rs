@@ -157,7 +157,7 @@ impl Parse for ShopifyFunctionTargetArgs {
             } else if lookahead.peek(kw::output_stream) {
                 args.output_stream = Some(Self::parse::<kw::output_stream, Expr>(&input)?);
             } else {
-                panic!("Unknown shopify_function_target parameter");
+                return Err(lookahead.error());
             }
         }
         Ok(args)
@@ -211,12 +211,10 @@ pub fn shopify_function_target(
     let target_handle_string = args.target.map_or(function_name_string.clone(), |target| {
         target
             .value()
-            .to_string()
             .split('.')
             .collect::<Vec<&str>>()
             .last()
             .unwrap()
-            .to_string()
             .to_case(Case::Snake)
     });
     let module_name = args.module_name.map_or(
