@@ -1,5 +1,5 @@
 [package]
-name = "example"
+name = "example_with_targets"
 version = "1.0.0"
 edition = "2021"
 license = "MIT"
