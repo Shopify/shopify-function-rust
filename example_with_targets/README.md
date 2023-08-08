@@ -68,6 +68,7 @@ input FunctionTargetBResult {
 [[targeting]]
 target = "example.target-a"
 input_query = "a.graphql"
+export = "target_a"
 
 [[targeting]]
 target = "example.target-b"
@@ -77,8 +78,7 @@ export = "function_b"
 
 - `target`: the API-specific handle for the target implemented by the Wasm function
 - `input_query`: the path to the target-specific input query file
-- `export` (optional): the name of the function to export to Wasm
-  - default: the target handle as `snake_case`
+- `export`: the name of the function to export to Wasm, required when multiple targets are present
 
 ## `shopify_function_target` usage
 
