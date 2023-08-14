@@ -101,7 +101,7 @@ fn test_discount_with_configuration() -> Result<()> {
                 },
             )],
             value: crate::output::Value::Percentage(output::Percentage {
-                value: "10".to_string(),
+                value: Decimal(10.0),
             }),
         }],
         discount_application_strategy: crate::output::DiscountApplicationStrategy::FIRST,

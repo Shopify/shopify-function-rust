@@ -350,8 +350,8 @@ fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStre
         #[graphql(
             query_path = #query_path,
             schema_path = #schema_path,
-            response_derives = "Clone,Debug,PartialEq,Eq,Deserialize,Serialize",
-            variables_derives = "Clone,Debug,PartialEq,Eq,Deserialize",
+            response_derives = "Clone,Debug,PartialEq,Deserialize,Serialize",
+            variables_derives = "Clone,Debug,PartialEq,Deserialize",
             skip_serializing_none
         )]
         pub struct #name_ident;
