@@ -78,7 +78,8 @@ export = "function_b"
 
 - `target`: the API-specific handle for the target implemented by the Wasm function
 - `input_query`: the path to the target-specific input query file
-- `export`: the name of the Wasm function export to run
+- `export` (optional): the name of the Wasm function export to run
+  - default: the target handle as `snake_case`
 
 ## `shopify_function_target` usage
 
