@@ -68,6 +68,7 @@ input FunctionTargetBResult {
 [[targeting]]
 target = "example.target-a"
 input_query = "a.graphql"
+export = "target_a"
 
 [[targeting]]
 target = "example.target-b"
@@ -77,7 +78,7 @@ export = "function_b"
 
 - `target`: the API-specific handle for the target implemented by the Wasm function
 - `input_query`: the path to the target-specific input query file
-- `export` (optional): the name of the function to export to Wasm
+- `export` (optional): the name of the Wasm function export to run
   - default: the target handle as `snake_case`
 
 ## `shopify_function_target` usage
@@ -139,7 +140,7 @@ Each target will have an `.output.graphql` file prefixed with the target handle 
 Target handle (`snake_case`) | Output file | GraphQL mutation
 -- | -- | --
 `target_a` | `.target_a.output.graphql` | `mutation Output($result: FunctionTargetAResult!) { targetA(result: $result) }`
-`target_b` | `.target_a.output.graphql` | `mutation Output($result: FunctionTargetBResult!) { targetB(result: $result) }`
+`target_b` | `.target_b.output.graphql` | `mutation Output($result: FunctionTargetBResult!) { targetB(result: $result) }`
 
 If the Rust function name does not match the target handle as `snake_case`, the `target` argument must be provided to `shopify_function_target` to generate the `output` types.
 
