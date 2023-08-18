@@ -5,4 +5,4 @@ pub type ID = String;
 pub type Decimal = String;
 pub type Void = ();
 pub type URL = String;
-pub type ShortID = String;
+pub type Handle = String;
