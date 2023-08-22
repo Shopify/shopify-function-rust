@@ -1,6 +1,6 @@
 [package]
 name = "shopify_function"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Surma <surma@shopify.com>", "Delta Pham <d.pham@shopify.com>"]
 license = "MIT"
@@ -10,7 +10,7 @@ description = "Crate to write Shopify Functions in Rust."
 serde = { version = "1.0.13", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0.62"
-shopify_function_macro = { version = "0.3.0", path = "../shopify_function_macro" }
+shopify_function_macro = { version = "0.4.0", path = "../shopify_function_macro" }
 
 [dev-dependencies]
 graphql_client = "0.13.0"
