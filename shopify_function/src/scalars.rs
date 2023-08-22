@@ -7,3 +7,4 @@ pub type ID = String;
 pub use decimal::Decimal;
 pub type Void = ();
 pub type URL = String;
+pub type Handle = String;
