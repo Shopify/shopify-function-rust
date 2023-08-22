@@ -207,7 +207,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "graphql_client",
@@ -218,7 +218,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_macro"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "convert_case",
  "proc-macro2",
