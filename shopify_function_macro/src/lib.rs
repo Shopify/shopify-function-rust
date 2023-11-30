@@ -168,10 +168,16 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident
     use syn::*;
 
     let ReturnType::Type(_arrow, ty) = &ast.sig.output else {
-        return Err(Error::new_spanned(&ast.sig, "Shopify Functions require an explicit return type"))
+        return Err(Error::new_spanned(
+            &ast.sig,
+            "Shopify Functions require an explicit return type",
+        ));
     };
     let Type::Path(path) = ty.as_ref() else {
-        return Err(Error::new_spanned(&ast.sig, "Shopify Functions must return a Result"))
+        return Err(Error::new_spanned(
+            &ast.sig,
+            "Shopify Functions must return a Result",
+        ));
     };
     let result = path.path.segments.last().unwrap();
     if result.ident != "Result" {
@@ -181,7 +187,10 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident
         ));
     }
     let PathArguments::AngleBracketed(generics) = &result.arguments else {
-        return Err(Error::new_spanned(result, "Shopify Function Result is missing generic arguments"))
+        return Err(Error::new_spanned(
+            result,
+            "Shopify Function Result is missing generic arguments",
+        ));
     };
     if generics.args.len() != 1 {
         return Err(Error::new_spanned(
@@ -190,10 +199,16 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident
         ));
     }
     let GenericArgument::Type(ty) = generics.args.first().unwrap() else {
-        return Err(Error::new_spanned(generics, "Shopify Function Result expects a type"))
+        return Err(Error::new_spanned(
+            generics,
+            "Shopify Function Result expects a type",
+        ));
     };
     let Type::Path(path) = ty else {
-        return Err(Error::new_spanned(result, "Unexpected result type for Shopify Function Result"))
+        return Err(Error::new_spanned(
+            result,
+            "Unexpected result type for Shopify Function Result",
+        ));
     };
     Ok(&path.path.segments.last().as_ref().unwrap().ident)
 }
