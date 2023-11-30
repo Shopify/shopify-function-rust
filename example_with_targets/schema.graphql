@@ -9,12 +9,47 @@ Only allow the field to be queried when targeting one of the specified targets.
 directive @restrictTarget(only: [String!]!) on FIELD_DEFINITION
 
 """
+Represents an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-encoded date string.
+For example, September 7, 2019 is represented as `"2019-07-16"`.
+"""
+scalar Date
+
+"""
+Represents an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-encoded date and time string.
+For example, 3:50 pm on September 7, 2019 in the time zone of UTC (Coordinated Universal Time) is
+represented as `"2019-09-07T15:50:00Z`".
+"""
+scalar DateTime
+
+"""
+A subset of the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format that
+includes the date and time but not the timezone which is determined from context.
+
+For example, "2018-01-01T00:00:00".
+"""
+scalar DateTimeWithoutTimezone
+
+"""
+A signed decimal number, which supports arbitrary precision and is serialized as a string.
+
+Example values: `"29.99"`, `"29.999"`.
+"""
+scalar Decimal
+
+"""
 Represents a unique identifier, often used to refetch an object.
 The ID type appears in a JSON response as a String, but it is not intended to be human-readable.
 
 Example value: `"gid://shopify/Product/10079785100"`
 """
 scalar ID
+
+"""
+A subset of the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format that
+includes the time but not the date or timezone which is determined from context.
+For example, "05:43:21".
+"""
+scalar TimeWithoutTimezone
 
 """
 A void type that can be used to return a null value from a mutation.
@@ -28,6 +63,10 @@ type Input {
   id: ID!
   num: Int
   name: String
+  date: Date
+  dateTime: DateTime
+  dateTimeWithoutTimezone: DateTimeWithoutTimezone
+  timeWithoutTimezone: TimeWithoutTimezone
   targetAResult: Int @restrictTarget(only: ["test.target-b"])
 }
 
