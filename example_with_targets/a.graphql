@@ -2,4 +2,8 @@ query Input {
   id
   num
   name
+  date
+  dateTime
+  dateTimeWithoutTimezone
+  timeWithoutTimezone
 }
