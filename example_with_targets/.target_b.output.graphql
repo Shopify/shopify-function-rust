@@ -1,3 +1,0 @@
-mutation Output($result: FunctionTargetBResult!) {
-    targetB(result: $result)
-}
