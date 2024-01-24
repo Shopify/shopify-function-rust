@@ -278,10 +278,12 @@ pub fn shopify_function_target(
         });
 
     quote! {
+        #[warn(dead_code)]
         pub mod #module_name {
             use super::*;
             use std::io::Write;
 
+            #[warn(dead_code)]
             #input_struct
             #output_struct
 
