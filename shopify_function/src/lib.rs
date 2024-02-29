@@ -27,8 +27,7 @@ pub mod prelude {
     pub use shopify_function_macro::{generate_types, shopify_function, shopify_function_target};
 }
 
-/// Convenience alias for `anyhow::Result`.
-pub type Result<T> = anyhow::Result<T>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Runs the given function `f` with the invocation payload, returning the
 /// deserialized output. This function is provided as a helper when writing
