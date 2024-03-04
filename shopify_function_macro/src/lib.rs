@@ -1,5 +1,8 @@
 use convert_case::{Case, Casing};
-use std::io::Write;
+use graphql_client_codegen::{
+    generate_module_token_stream, generate_module_token_stream_from_string, CodegenMode,
+    GraphQLClientCodegenOptions,
+};
 use std::path::Path;
 
 use proc_macro2::{Ident, Span, TokenStream, TokenTree};
@@ -237,23 +240,20 @@ pub fn shopify_function_target(
         |module_name| Ident::new(module_name.value().as_str(), Span::mixed_site()),
     );
 
-    let query_path = args.query_path.expect("No value given for query_path");
-    let schema_path = args.schema_path.expect("No value given for schema_path");
-    let output_query_file_name = format!(".{}{}", &target_handle_string, OUTPUT_QUERY_FILE_NAME);
+    let dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let query_path = Path::new(&dir).join(
+        args.query_path
+            .expect("No value given for query_path")
+            .value()
+            .as_str(),
+    );
+    let schema_path = Path::new(&dir).join(
+        args.schema_path
+            .expect("No value given for schema_path")
+            .value()
+            .as_str(),
+    );
 
-    let input_struct = generate_struct(
-        "Input",
-        query_path.value().as_str(),
-        schema_path.value().as_str(),
-    );
-    let output_struct = generate_struct(
-        "Output",
-        &output_query_file_name,
-        schema_path.value().as_str(),
-    );
-    if let Err(error) = extract_shopify_function_return_type(&ast) {
-        return error.to_compile_error().into();
-    }
     let output_result_type = extract_shopify_function_return_type(&ast)
         .unwrap()
         .to_token_stream()
@@ -263,8 +263,12 @@ pub fn shopify_function_target(
         output_result_type,
         &target_handle_string.to_case(Case::Camel)
     );
+    let input_struct = generate_input_struct(query_path.as_path(), &schema_path);
+    let output_struct = generate_output_struct(&output_query, &schema_path);
 
-    write_output_query_file(&output_query_file_name, &output_query);
+    if let Err(error) = extract_shopify_function_return_type(&ast) {
+        return error.to_compile_error().into();
+    }
 
     let input_stream = args
         .input_stream
@@ -318,8 +322,6 @@ fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
     value.as_str()[1..value.len() - 1].to_string()
 }
 
-const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
-
 /// Generate the types to interact with Shopify's API.
 ///
 /// The macro generates two inline modules: `input` and `output`. The
@@ -340,15 +342,17 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let params = TokenStream::from(attr);
 
-    let query_path = extract_attr(&params, "query_path");
-    let schema_path = extract_attr(&params, "schema_path");
+    let query_path_attr = extract_attr(&params, "query_path");
+    let schema_path_attr = extract_attr(&params, "schema_path");
 
-    let input_struct = generate_struct("Input", &query_path, &schema_path);
-    let output_struct = generate_struct("Output", OUTPUT_QUERY_FILE_NAME, &schema_path);
+    let schema_path = build_path(&schema_path_attr);
+
+    let input_query_path = build_path(&query_path_attr);
+    let input_struct = generate_input_struct(input_query_path.as_path(), &schema_path);
+
     let output_query =
         "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
-
-    write_output_query_file(OUTPUT_QUERY_FILE_NAME, output_query);
+    let output_struct = generate_output_struct(output_query, &schema_path);
 
     quote! {
         #input_struct
@@ -357,29 +361,45 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
     .into()
 }
 
-fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStream {
-    let name_ident = Ident::new(name, Span::mixed_site());
+fn build_path(path_attr: &str) -> std::path::PathBuf {
+    let cargo_manifest_dir =
+        std::env::var("CARGO_MANIFEST_DIR").expect("Error reading CARGO_MANIFEST_DIR from env");
+    Path::new(&cargo_manifest_dir).join(path_attr)
+}
+
+fn graphql_codegen_options(operation_name: String) -> GraphQLClientCodegenOptions {
+    let mut options = GraphQLClientCodegenOptions::new(CodegenMode::Derive);
+    options.set_operation_name(operation_name);
+    options.set_response_derives("Clone,Debug,PartialEq,Deserialize,Serialize".to_string());
+    options.set_variables_derives("Clone,Debug,PartialEq,Deserialize".to_string());
+    options.set_skip_serializing_none(true);
+
+    options
+}
+
+fn generate_input_struct(
+    query_path: &std::path::Path,
+    schema_path: &Path,
+) -> proc_macro2::TokenStream {
+    let options = graphql_codegen_options("Input".to_string());
+    let token_stream = generate_module_token_stream(query_path.to_path_buf(), schema_path, options)
+        .expect("Error generating Input struct");
 
     quote! {
-        #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
-        #[graphql(
-            query_path = #query_path,
-            schema_path = #schema_path,
-            response_derives = "Clone,Debug,PartialEq,Deserialize,Serialize",
-            variables_derives = "Clone,Debug,PartialEq,Deserialize",
-            skip_serializing_none
-        )]
-        pub struct #name_ident;
+        #token_stream
+        pub struct Input;
     }
 }
 
-fn write_output_query_file(output_query_file_name: &str, contents: &str) {
-    let cargo_manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let output_query_path = Path::new(&cargo_manifest_dir).join(output_query_file_name);
-    std::fs::File::create(output_query_path)
-        .expect("Could not create output query file")
-        .write_all(contents.as_bytes())
-        .unwrap_or_else(|_| panic!("Could not write to {}", output_query_file_name));
+fn generate_output_struct(query: &str, schema_path: &Path) -> proc_macro2::TokenStream {
+    let options = graphql_codegen_options("Output".to_string());
+    let token_stream = generate_module_token_stream_from_string(query, schema_path, options)
+        .expect("Error generating Output struct");
+
+    quote! {
+        #token_stream
+        pub struct Output;
+    }
 }
 
 #[cfg(test)]
