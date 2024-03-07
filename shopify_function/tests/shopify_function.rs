@@ -4,7 +4,8 @@ use shopify_function::Result;
 const FUNCTION_INPUT: &str = r#"{
   "id": "gid://shopify/Order/1234567890",
   "num": 123,
-  "name": "test"
+  "name": "test",
+  "country": "CA"
 }"#;
 static mut FUNCTION_OUTPUT: Vec<u8> = vec![];
 

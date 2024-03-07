@@ -76,20 +76,27 @@ input_query = "b.graphql"
 export = "function_b"
 ```
 
-- `target`: the API-specific handle for the target implemented by the Wasm function
-- `input_query`: the path to the target-specific input query file
-- `export` (optional): the name of the Wasm function export to run
-  - default: the target handle as `snake_case`
+- `target`: The API-specific handle for the target implemented by the Wasm function.
+- `input_query`: The path to the target-specific input query file.
+- `export` (optional): The name of the Wasm function export to run.
+  - default: The target handle as `snake_case`.
 
 ## `shopify_function_target` usage
 
 ### Arguments
 
-- `query_path`: the path to the input query file for the target
-- `schema_path`: the path to the API schema file for the target
-- `target` (optional): the API-specific handle for the target if the function name does not match the target handle as `snake_case`
-- `module_name` (optional): the name of the generated module
-  - default: the target handle as `snake_case`
+- `query_path`: A path to a GraphQL query, whose result will be used
+  as the input for the function invocation. The query MUST be named "Input".
+- `schema_path`: A path to Shopify's GraphQL schema definition. Use the CLI
+  to download a fresh copy.
+- `target` (optional): The API-specific handle for the target if the function name does not match the target handle as `snake_case`.
+- `module_name` (optional): The name of the generated module.
+  - default: The target handle as `snake_case`
+- `extern_enums` (optional): A list of Enums for which an external type should be used.
+  For those, code generation will be skipped. This is useful for large enums
+  which can increase binary size, or for enums shared between multiple targets.
+  Example: `extern_enums = ["LanguageCode"]`
+    - default: `["LanguageCode", "CountryCode", "CurrencyCode"]`
 
 ### `src/lib.rs`
 

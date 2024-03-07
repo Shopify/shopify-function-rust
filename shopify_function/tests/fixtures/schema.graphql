@@ -28,6 +28,7 @@ type Input {
   id: ID!
   num: Int
   name: String
+  country: CountryCode
 }
 
 """
@@ -50,4 +51,9 @@ The result of the function.
 """
 input FunctionResult {
   name: String
+}
+
+enum CountryCode {
+  AC
+  CA
 }

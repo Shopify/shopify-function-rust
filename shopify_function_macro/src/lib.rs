@@ -4,7 +4,10 @@ use std::path::Path;
 
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, LitStr, Token};
+use syn::{
+    self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, ExprArray, FnArg, LitStr,
+    Token,
+};
 
 #[derive(Clone, Default)]
 struct ShopifyFunctionArgs {
@@ -123,6 +126,7 @@ struct ShopifyFunctionTargetArgs {
     schema_path: Option<LitStr>,
     input_stream: Option<Expr>,
     output_stream: Option<Expr>,
+    extern_enums: Option<ExprArray>,
 }
 
 impl ShopifyFunctionTargetArgs {
@@ -156,6 +160,8 @@ impl Parse for ShopifyFunctionTargetArgs {
                 args.input_stream = Some(Self::parse::<kw::input_stream, Expr>(&input)?);
             } else if lookahead.peek(kw::output_stream) {
                 args.output_stream = Some(Self::parse::<kw::output_stream, Expr>(&input)?);
+            } else if lookahead.peek(kw::extern_enums) {
+                args.extern_enums = Some(Self::parse::<kw::extern_enums, ExprArray>(&input)?);
             } else {
                 return Err(lookahead.error());
             }
@@ -170,6 +176,7 @@ struct GenerateTypeArgs {
     schema_path: Option<LitStr>,
     input_stream: Option<Expr>,
     output_stream: Option<Expr>,
+    extern_enums: Option<ExprArray>,
 }
 
 impl GenerateTypeArgs {
@@ -199,6 +206,8 @@ impl Parse for GenerateTypeArgs {
                 args.input_stream = Some(Self::parse::<kw::input_stream, Expr>(&input)?);
             } else if lookahead.peek(kw::output_stream) {
                 args.output_stream = Some(Self::parse::<kw::output_stream, Expr>(&input)?);
+            } else if lookahead.peek(kw::extern_enums) {
+                args.extern_enums = Some(Self::parse::<kw::extern_enums, ExprArray>(&input)?);
             } else {
                 return Err(lookahead.error());
             }
@@ -256,6 +265,26 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident
     Ok(&path.path.segments.last().as_ref().unwrap().ident)
 }
 
+/// Generates code for a Function using an explicitly-named target. This will:
+/// - Generate a module to host the generated types.
+/// - Generate types based on the GraphQL schema for the Function input and output.
+/// - Define a wrapper function that's exported to Wasm. The wrapper handles
+///   decoding the input from STDIN, and encoding the output to STDOUT.
+///
+///
+/// The macro takes the following parameters:
+/// - `query_path`: A path to a GraphQL query, whose result will be used
+///    as the input for the function invocation. The query MUST be named "Input".
+/// - `schema_path`: A path to Shopify's GraphQL schema definition. Use the CLI
+///   to download a fresh copy.
+/// - `target` (optional): The API-specific handle for the target if the function name does not match the target handle as `snake_case`
+/// - `module_name` (optional): The name of the generated module.
+///   - default: The target handle as `snake_case`
+/// - `extern_enums` (optional): A list of Enums for which an external type should be used.
+///   For those, code generation will be skipped. This is useful for large enums
+///   which can increase binary size, or for enums shared between multiple targets.
+///   Example: `extern_enums = ["LanguageCode"]`
+///    - default: `["LanguageCode", "CountryCode", "CurrencyCode"]`
 #[proc_macro_attribute]
 pub fn shopify_function_target(
     attr: proc_macro::TokenStream,
@@ -282,17 +311,21 @@ pub fn shopify_function_target(
 
     let query_path = args.query_path.expect("No value given for query_path");
     let schema_path = args.schema_path.expect("No value given for schema_path");
+    let extern_enums = args.extern_enums.as_ref().map(extract_extern_enums);
     let output_query_file_name = format!(".{}{}", &target_handle_string, OUTPUT_QUERY_FILE_NAME);
 
     let input_struct = generate_struct(
         "Input",
         query_path.value().as_str(),
         schema_path.value().as_str(),
+        extern_enums.as_deref(),
     );
+
     let output_struct = generate_struct(
         "Output",
         &output_query_file_name,
         schema_path.value().as_str(),
+        extern_enums.as_deref(),
     );
     if let Err(error) = extract_shopify_function_return_type(&ast) {
         return error.to_compile_error().into();
@@ -353,12 +386,16 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 /// modules generate Rust types from the GraphQL schema file for the Function input
 /// and output respectively.
 ///
-/// The macro takes two parameters:
+/// The macro takes the following parameters:
 /// - `query_path`: A path to a GraphQL query, whose result will be used
 ///    as the input for the function invocation. The query MUST be named "Input".
-/// - `schema_path`: A path to Shopify's GraphQL schema definition. You
-///   can find it in the `example` folder of the repo, or use the CLI
-///   to download a fresh copy (not implemented yet).
+/// - `schema_path`: A path to Shopify's GraphQL schema definition. Use the CLI
+///   to download a fresh copy.
+/// - `extern_enums` (optional): A list of Enums for which an external type should be used.
+///   For those, code generation will be skipped. This is useful for large enums
+///   which can increase binary size, or for enums shared between multiple targets.
+///   Example: `extern_enums = ["LanguageCode"]`
+///    - default: `["LanguageCode", "CountryCode", "CurrencyCode"]`
 ///
 /// Note: This macro creates a file called `.output.graphql` in the root
 /// directory of the project. It can be safely added to your `.gitignore`. We
@@ -375,9 +412,19 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .schema_path
         .expect("No value given for schema_path")
         .value();
-
-    let input_struct = generate_struct("Input", query_path.as_str(), schema_path.as_str());
-    let output_struct = generate_struct("Output", OUTPUT_QUERY_FILE_NAME, schema_path.as_str());
+    let extern_enums = args.extern_enums.as_ref().map(extract_extern_enums);
+    let input_struct = generate_struct(
+        "Input",
+        query_path.as_str(),
+        schema_path.as_str(),
+        extern_enums.as_deref(),
+    );
+    let output_struct = generate_struct(
+        "Output",
+        OUTPUT_QUERY_FILE_NAME,
+        schema_path.as_str(),
+        extern_enums.as_deref(),
+    );
     let output_query =
         "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
 
@@ -390,8 +437,19 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
     .into()
 }
 
-fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStream {
+const DEFAULT_EXTERN_ENUMS: &[&str] = &["LanguageCode", "CountryCode", "CurrencyCode"];
+
+fn generate_struct(
+    name: &str,
+    query_path: &str,
+    schema_path: &str,
+    extern_enums: Option<&[String]>,
+) -> TokenStream {
     let name_ident = Ident::new(name, Span::mixed_site());
+
+    let extern_enums = extern_enums
+        .map(|e| e.to_owned())
+        .unwrap_or_else(|| DEFAULT_EXTERN_ENUMS.iter().map(|e| e.to_string()).collect());
 
     quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
@@ -400,6 +458,7 @@ fn generate_struct(name: &str, query_path: &str, schema_path: &str) -> TokenStre
             schema_path = #schema_path,
             response_derives = "Clone,Debug,PartialEq,Deserialize,Serialize",
             variables_derives = "Clone,Debug,PartialEq,Deserialize",
+            extern_enums(#(#extern_enums),*),
             skip_serializing_none
         )]
         pub struct #name_ident;
@@ -415,6 +474,24 @@ fn write_output_query_file(output_query_file_name: &str, contents: &str) {
         .unwrap_or_else(|_| panic!("Could not write to {}", output_query_file_name));
 }
 
+fn extract_extern_enums(extern_enums: &ExprArray) -> Vec<String> {
+    let extern_enum_error_msg = r#"The `extern_enums` attribute expects comma separated string literals\n\n= help: use `extern_enums = ["Enum1", "Enum2"]`"#;
+    extern_enums
+        .elems
+        .iter()
+        .map(|expr| {
+            let value = match expr {
+                Expr::Lit(lit) => lit.lit.clone(),
+                _ => panic!("{}", extern_enum_error_msg),
+            };
+            match value {
+                syn::Lit::Str(lit) => lit.value(),
+                _ => panic!("{}", extern_enum_error_msg),
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {}
 
@@ -425,4 +502,5 @@ mod kw {
     syn::custom_keyword!(schema_path);
     syn::custom_keyword!(input_stream);
     syn::custom_keyword!(output_stream);
+    syn::custom_keyword!(extern_enums);
 }
