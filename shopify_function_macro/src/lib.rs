@@ -2,7 +2,7 @@ use convert_case::{Case, Casing};
 use std::io::Write;
 use std::path::Path;
 
-use proc_macro2::{Ident, Span, TokenStream, TokenTree};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, FnArg, LitStr, Token};
 
@@ -164,6 +164,49 @@ impl Parse for ShopifyFunctionTargetArgs {
     }
 }
 
+#[derive(Clone, Default)]
+struct GenerateTypeArgs {
+    query_path: Option<LitStr>,
+    schema_path: Option<LitStr>,
+    input_stream: Option<Expr>,
+    output_stream: Option<Expr>,
+}
+
+impl GenerateTypeArgs {
+    fn parse<K: syn::parse::Parse, V: syn::parse::Parse>(
+        input: &ParseStream<'_>,
+    ) -> syn::Result<V> {
+        input.parse::<K>()?;
+        input.parse::<Token![=]>()?;
+        let value: V = input.parse()?;
+        if input.lookahead1().peek(Token![,]) {
+            input.parse::<Token![,]>()?;
+        }
+        Ok(value)
+    }
+}
+
+impl Parse for GenerateTypeArgs {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut args = Self::default();
+        while !input.is_empty() {
+            let lookahead = input.lookahead1();
+            if lookahead.peek(kw::query_path) {
+                args.query_path = Some(Self::parse::<kw::query_path, LitStr>(&input)?);
+            } else if lookahead.peek(kw::schema_path) {
+                args.schema_path = Some(Self::parse::<kw::schema_path, LitStr>(&input)?);
+            } else if lookahead.peek(kw::input_stream) {
+                args.input_stream = Some(Self::parse::<kw::input_stream, Expr>(&input)?);
+            } else if lookahead.peek(kw::output_stream) {
+                args.output_stream = Some(Self::parse::<kw::output_stream, Expr>(&input)?);
+            } else {
+                return Err(lookahead.error());
+            }
+        }
+        Ok(args)
+    }
+}
+
 fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident, syn::Error> {
     use syn::*;
 
@@ -302,22 +345,6 @@ pub fn shopify_function_target(
     .into()
 }
 
-fn extract_attr(attrs: &TokenStream, attr: &str) -> String {
-    let attrs: Vec<TokenTree> = attrs.clone().into_iter().collect();
-    let attr_index = attrs
-        .iter()
-        .position(|item| match item {
-            TokenTree::Ident(ident) => ident.to_string().as_str() == attr,
-            _ => false,
-        })
-        .unwrap_or_else(|| panic!("No attribute with name {} found", attr));
-    let value = attrs
-        .get(attr_index + 2)
-        .unwrap_or_else(|| panic!("No value given for {} attribute", attr))
-        .to_string();
-    value.as_str()[1..value.len() - 1].to_string()
-}
-
 const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 
 /// Generate the types to interact with Shopify's API.
@@ -338,13 +365,19 @@ const OUTPUT_QUERY_FILE_NAME: &str = ".output.graphql";
 /// hope we can avoid creating this file at some point in the future.
 #[proc_macro]
 pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let params = TokenStream::from(attr);
+    let args = parse_macro_input!(attr as GenerateTypeArgs);
 
-    let query_path = extract_attr(&params, "query_path");
-    let schema_path = extract_attr(&params, "schema_path");
+    let query_path = args
+        .query_path
+        .expect("No value given for query_path")
+        .value();
+    let schema_path = args
+        .schema_path
+        .expect("No value given for schema_path")
+        .value();
 
-    let input_struct = generate_struct("Input", &query_path, &schema_path);
-    let output_struct = generate_struct("Output", OUTPUT_QUERY_FILE_NAME, &schema_path);
+    let input_struct = generate_struct("Input", query_path.as_str(), schema_path.as_str());
+    let output_struct = generate_struct("Output", OUTPUT_QUERY_FILE_NAME, schema_path.as_str());
     let output_query =
         "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
 
