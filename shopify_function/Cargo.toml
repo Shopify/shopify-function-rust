@@ -14,7 +14,7 @@ shopify_function_macro = { version = "0.7.0", path = "../shopify_function_macro"
 # Use the `small` feature of ryu (transitive dependency through serde_json)
 # to shave off ~9kb of the Wasm binary size.
 [dependencies.ryu]
-version = "*"
+version = "1"
 features = ["small"]
 
 [dev-dependencies]
