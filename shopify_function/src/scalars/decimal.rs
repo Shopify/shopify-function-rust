@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
+use std::{ops::Deref, str::FromStr};
 
 /// Convenience wrapper for converting between Shopify's `Decimal` scalar, which
 /// is serialized as a `String`, and Rust's `f64`.
@@ -12,6 +12,14 @@ impl Decimal {
     /// Access the value as an `f64`
     pub fn as_f64(&self) -> f64 {
         self.0
+    }
+}
+
+impl Deref for Decimal {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
