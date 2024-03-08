@@ -2,4 +2,5 @@ query Input {
   id
   num
   name
+  country
 }

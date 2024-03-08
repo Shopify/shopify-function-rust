@@ -18,11 +18,14 @@
 
 pub use shopify_function_macro::{generate_types, shopify_function, shopify_function_target};
 
+#[doc(hidden)]
+pub mod enums;
 /// Only used for struct generation.
 #[doc(hidden)]
 pub mod scalars;
 
 pub mod prelude {
+    pub use crate::enums::*;
     pub use crate::scalars::*;
     pub use shopify_function_macro::{generate_types, shopify_function, shopify_function_target};
 }

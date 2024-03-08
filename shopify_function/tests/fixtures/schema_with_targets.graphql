@@ -28,6 +28,7 @@ type Input {
   id: ID!
   num: Int
   name: String
+  country: CountryCode,
   targetAResult: Int @restrictTarget(only: ["test.target-b"])
 }
 
@@ -68,4 +69,9 @@ The result of API target B.
 """
 input FunctionTargetBResult {
   name: String
+}
+
+enum CountryCode {
+  AC
+  CA
 }
