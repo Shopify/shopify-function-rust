@@ -339,7 +339,8 @@ pub fn shopify_function_target(
         output_result_type,
         &target_handle_string.to_case(Case::Camel)
     );
-    let output_struct = generate_output_struct(&output_query, schema_path.as_str());
+    let output_struct =
+        generate_output_struct(&output_query, schema_path.as_str(), extern_enums.as_deref());
 
     if let Err(error) = extract_shopify_function_return_type(&ast) {
         return error.to_compile_error().into();
@@ -417,7 +418,7 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
     );
     let output_query =
         "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
-    let output_struct = generate_output_struct(output_query, &schema_path);
+    let output_struct = generate_output_struct(output_query, &schema_path, extern_enums.as_deref());
 
     quote! {
         #input_struct
@@ -451,18 +452,28 @@ fn generate_input_struct(
     }
 }
 
-fn graphql_codegen_options(operation_name: String) -> GraphQLClientCodegenOptions {
+fn graphql_codegen_options(
+    operation_name: String,
+    extern_enums: Option<&[String]>,
+) -> GraphQLClientCodegenOptions {
     let mut options = GraphQLClientCodegenOptions::new(CodegenMode::Derive);
     options.set_operation_name(operation_name);
     options.set_response_derives("Clone,Debug,PartialEq,Deserialize,Serialize".to_string());
     options.set_variables_derives("Clone,Debug,PartialEq,Deserialize".to_string());
     options.set_skip_serializing_none(true);
+    if let Some(extern_enums) = extern_enums {
+        options.set_extern_enums(extern_enums.to_vec());
+    }
 
     options
 }
 
-fn generate_output_struct(query: &str, schema_path: &str) -> proc_macro2::TokenStream {
-    let options = graphql_codegen_options("Output".to_string());
+fn generate_output_struct(
+    query: &str,
+    schema_path: &str,
+    extern_enums: Option<&[String]>,
+) -> proc_macro2::TokenStream {
+    let options = graphql_codegen_options("Output".to_string(), extern_enums);
     let cargo_manifest_dir =
         std::env::var("CARGO_MANIFEST_DIR").expect("Error reading CARGO_MANIFEST_DIR from env");
     let schema_path = Path::new(&cargo_manifest_dir).join(schema_path);
