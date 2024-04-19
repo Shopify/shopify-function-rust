@@ -7,8 +7,9 @@ use std::path::Path;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{
-    self, parse::Parse, parse::ParseStream, parse_macro_input, Expr, ExprArray, FnArg, LitStr,
-    Token,
+    self,
+    parse::{Parse, ParseStream},
+    parse_macro_input, Expr, ExprArray, FnArg, LitStr, Token,
 };
 
 #[derive(Clone, Default)]
@@ -461,6 +462,12 @@ fn graphql_codegen_options(
     options.set_response_derives("Clone,Debug,PartialEq,Deserialize,Serialize".to_string());
     options.set_variables_derives("Clone,Debug,PartialEq,Deserialize".to_string());
     options.set_skip_serializing_none(true);
+    options.set_module_visibility(
+        syn::VisPublic {
+            pub_token: <Token![pub]>::default(),
+        }
+        .into(),
+    );
     if let Some(extern_enums) = extern_enums {
         options.set_extern_enums(extern_enums.to_vec());
     }
