@@ -4,57 +4,57 @@ A crate to help developers build [Shopify Functions].
 
 ## Dependencies
 
-* Make sure you have `graphql_client` in your dependencies
+- Make sure you have `graphql_client` in your dependencies
 
-    ```
-    cargo add graphql_client@0.13.0
-    ```
+  ```
+  cargo add graphql_client@0.14.0
+  ```
 
 ## Usage
 
-* The [`generate_types`] macro allows you to generate structs based on your [input query]. It will also generate output/response types for the current Function API, based on the provided schema.
-    * It will automatically generate an `.output.graphql` file for code generation purposes. This file can be added to your `.gitignore`.
-* The [`shopify_function`] attribute macro marks the following function as the entry point for a Shopify Function. It manages the Functions `STDIN` input parsing and `STDOUT` output serialization for you.
-* The [`run_function_with_input`] function is a utility for unit testing which allows you to quickly add new tests based on a given JSON input string.
+- The [`generate_types`] macro allows you to generate structs based on your [input query]. It will also generate output/response types for the current Function API, based on the provided schema.
+- The [`shopify_function`] attribute macro marks the following function as the entry point for a Shopify Function. It manages the Functions `STDIN` input parsing and `STDOUT` output serialization for you.
+- The [`run_function_with_input`] function is a utility for unit testing which allows you to quickly add new tests based on a given JSON input string.
 
 See the [example] for details on usage, or use the following guide to convert an existing Rust-based function.
 
 ## Updating an existing function to use `shopify_function`
 
 1. `cargo add shopify_function`
-1. `cargo add graphql_client@0.13.0`
+1. `cargo add graphql_client@0.14.0`
 1. Delete `src/api.rs`.
 1. In `main.rs`:
-    1. Add imports for `shopify_function`.
 
-        ```rust
-        use shopify_function::prelude::*;
-        use shopify_function::Result;
-        ```
+   1. Add imports for `shopify_function`.
 
-    1. Remove references to `mod api`.
-    1. Add type generation, right under your imports.
+      ```rust
+      use shopify_function::prelude::*;
+      use shopify_function::Result;
+      ```
 
-        ```rust
-        generate_types!(query_path = "./input.graphql", schema_path = "./schema.graphql");
-        ```
+   1. Remove references to `mod api`.
+   1. Add type generation, right under your imports.
 
-    1. Remove the `main` function entirely.
-    1. Attribute the `function` function with the `shopify_function` macro, and change its return type.
+      ```rust
+      generate_types!(query_path = "./input.graphql", schema_path = "./schema.graphql");
+      ```
 
-        ```rust
-        #[shopify_function]
-        fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
-        ```
+   1. Remove the `main` function entirely.
+   1. Attribute the `function` function with the `shopify_function` macro, and change its return type.
 
-    1. Update the types and fields utilized in the function to the new, auto-generated structs. For example:
-        | Old | New |
-        | --- | --- |
-        | `input::Input` | `input::ResponseData` |
-        | `input::Metafield` | `input::InputDiscountNodeMetafield` |
-        | `input::DiscountNode` | `input::InputDiscountNode` |
-        | `FunctionResult` | `output::FunctionResult` |
-        | `DiscountApplicationStrategy::First` | `output::DiscountApplicationStrategy::FIRST` |
+      ```rust
+      #[shopify_function]
+      fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
+      ```
+
+   1. Update the types and fields utilized in the function to the new, auto-generated structs. For example:
+      | Old | New |
+      | --- | --- |
+      | `input::Input` | `input::ResponseData` |
+      | `input::Metafield` | `input::InputDiscountNodeMetafield` |
+      | `input::DiscountNode` | `input::InputDiscountNode` |
+      | `FunctionResult` | `output::FunctionResult` |
+      | `DiscountApplicationStrategy::First` | `output::DiscountApplicationStrategy::FIRST` |
 
 1. Add `.output.graphql` to your `.gitignore`.
 
@@ -69,6 +69,7 @@ cargo doc --open
 You can also use the [cargo-expand](https://github.com/dtolnay/cargo-expand) crate to view the generated source, or use the [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer) VSCode extension to get [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense) for Rust and the generated types.
 
 ---
+
 License Apache-2.0
 
 [Shopify Functions]: https://shopify.dev/api/functions

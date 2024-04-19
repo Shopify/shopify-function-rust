@@ -18,4 +18,5 @@ version = "1"
 features = ["small"]
 
 [dev-dependencies]
-graphql_client = "0.13.0"
+graphql_client = "0.14.0"
+graphql_client_codegen = "0.14.0"
