@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{ops::Deref, str::FromStr};
+use std::ops::Deref;
 
 /// Convenience wrapper for converting between Shopify's `Decimal` scalar, which
 /// is serialized as a `String`, and Rust's `f64`.
@@ -24,10 +24,12 @@ impl Deref for Decimal {
 }
 
 impl TryFrom<String> for Decimal {
-    type Error = std::num::ParseFloatError;
+    type Error = &'static str;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        f64::from_str(value.as_str()).map(Self)
+        serde_json::from_str(value.as_str())
+            .map(Self)
+            .map_err(|_| "Error parsing decimal: invalid float literal")
     }
 }
 
@@ -59,6 +61,17 @@ mod tests {
         let decimal: Decimal =
             serde_json::from_value(decimal_value).expect("Error deserializing from JSON");
         assert_eq!(123.4, decimal.as_f64());
+    }
+
+    #[test]
+    fn test_json_deserialization_error() {
+        let decimal_value = serde_json::json!("123.4.5");
+        let error =
+            serde_json::from_value::<Decimal>(decimal_value).expect_err("Expected an error");
+        assert_eq!(
+            "Error parsing decimal: invalid float literal",
+            error.to_string()
+        );
     }
 
     #[test]
