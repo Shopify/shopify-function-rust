@@ -33,7 +33,7 @@ impl TryFrom<String> for Decimal {
 
 impl From<Decimal> for String {
     fn from(value: Decimal) -> Self {
-        value.0.to_string()
+        ryu::Buffer::new().format(value.0).to_string()
     }
 }
 
