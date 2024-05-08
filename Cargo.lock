@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "graphql_client",
  "graphql_client_codegen",
@@ -215,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_macro"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "convert_case",
  "graphql_client_codegen",
