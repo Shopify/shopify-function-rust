@@ -69,6 +69,7 @@ The result of API target B.
 """
 input FunctionTargetBResult {
   name: String
+  country: CountryCode
 }
 
 enum CountryCode {

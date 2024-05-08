@@ -41,7 +41,7 @@ static mut TARGET_B_OUTPUT: Vec<u8> = vec![];
 
 #[test]
 fn test_mod_b_export() {
-    let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890"}"#;
+    let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890","country":"CA"}"#;
     mod_b::export();
     let actual_result = std::str::from_utf8(unsafe { TARGET_B_OUTPUT.as_slice() }).unwrap();
     assert_eq!(actual_result, expected_result);
@@ -60,6 +60,7 @@ fn some_function(
 ) -> Result<mod_b::output::FunctionTargetBResult> {
     Ok(mod_b::output::FunctionTargetBResult {
         name: Some(format!("new name: {}", input.id)),
+        country: Some("CA".to_string()),
     })
 }
 
