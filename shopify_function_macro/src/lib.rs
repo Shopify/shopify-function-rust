@@ -320,12 +320,16 @@ pub fn shopify_function_target(
         .schema_path
         .expect("No value given for schema_path")
         .value();
-    let extern_enums = args.extern_enums.as_ref().map(extract_extern_enums);
+    let extern_enums = args
+        .extern_enums
+        .as_ref()
+        .map(extract_extern_enums)
+        .unwrap_or_else(default_exter_enums);
 
     let input_struct = generate_input_struct(
         query_path.as_str(),
         schema_path.as_str(),
-        extern_enums.as_deref(),
+        extern_enums.as_slice(),
     );
 
     if let Err(error) = extract_shopify_function_return_type(&ast) {
@@ -341,7 +345,7 @@ pub fn shopify_function_target(
         &target_handle_string.to_case(Case::Camel)
     );
     let output_struct =
-        generate_output_struct(&output_query, schema_path.as_str(), extern_enums.as_deref());
+        generate_output_struct(&output_query, schema_path.as_str(), extern_enums.as_slice());
 
     if let Err(error) = extract_shopify_function_return_type(&ast) {
         return error.to_compile_error().into();
@@ -411,15 +415,20 @@ pub fn generate_types(attr: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .schema_path
         .expect("No value given for schema_path")
         .value();
-    let extern_enums = args.extern_enums.as_ref().map(extract_extern_enums);
+    let extern_enums = args
+        .extern_enums
+        .as_ref()
+        .map(extract_extern_enums)
+        .unwrap_or_else(default_exter_enums);
+
     let input_struct = generate_input_struct(
         query_path.as_str(),
         schema_path.as_str(),
-        extern_enums.as_deref(),
+        extern_enums.as_slice(),
     );
     let output_query =
         "mutation Output($result: FunctionResult!) {\n    handleResult(result: $result)\n}\n";
-    let output_struct = generate_output_struct(output_query, &schema_path, extern_enums.as_deref());
+    let output_struct = generate_output_struct(output_query, &schema_path, extern_enums.as_slice());
 
     quote! {
         #input_struct
@@ -433,12 +442,8 @@ const DEFAULT_EXTERN_ENUMS: &[&str] = &["LanguageCode", "CountryCode", "Currency
 fn generate_input_struct(
     query_path: &str,
     schema_path: &str,
-    extern_enums: Option<&[String]>,
+    extern_enums: &[String],
 ) -> TokenStream {
-    let extern_enums = extern_enums
-        .map(|e| e.to_owned())
-        .unwrap_or_else(|| DEFAULT_EXTERN_ENUMS.iter().map(|e| e.to_string()).collect());
-
     quote! {
         #[derive(graphql_client::GraphQLQuery, Clone, Debug, serde::Deserialize, PartialEq)]
         #[graphql(
@@ -455,7 +460,7 @@ fn generate_input_struct(
 
 fn graphql_codegen_options(
     operation_name: String,
-    extern_enums: Option<&[String]>,
+    extern_enums: &[String],
 ) -> GraphQLClientCodegenOptions {
     let mut options = GraphQLClientCodegenOptions::new(CodegenMode::Derive);
     options.set_operation_name(operation_name);
@@ -468,9 +473,7 @@ fn graphql_codegen_options(
         }
         .into(),
     );
-    if let Some(extern_enums) = extern_enums {
-        options.set_extern_enums(extern_enums.to_vec());
-    }
+    options.set_extern_enums(extern_enums.to_vec());
 
     options
 }
@@ -478,7 +481,7 @@ fn graphql_codegen_options(
 fn generate_output_struct(
     query: &str,
     schema_path: &str,
-    extern_enums: Option<&[String]>,
+    extern_enums: &[String],
 ) -> proc_macro2::TokenStream {
     let options = graphql_codegen_options("Output".to_string(), extern_enums);
     let cargo_manifest_dir =
@@ -509,6 +512,10 @@ fn extract_extern_enums(extern_enums: &ExprArray) -> Vec<String> {
             }
         })
         .collect()
+}
+
+fn default_exter_enums() -> Vec<String> {
+    DEFAULT_EXTERN_ENUMS.iter().map(|e| e.to_string()).collect()
 }
 
 #[cfg(test)]

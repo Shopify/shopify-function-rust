@@ -51,6 +51,7 @@ The result of the function.
 """
 input FunctionResult {
   name: String
+  country: CountryCode
 }
 
 enum CountryCode {

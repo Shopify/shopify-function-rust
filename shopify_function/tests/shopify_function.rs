@@ -16,7 +16,7 @@ generate_types!(
 
 #[test]
 fn test_function() {
-    let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890"}"#;
+    let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890","country":"CA"}"#;
     main().unwrap();
     let actual_result = std::str::from_utf8(unsafe { FUNCTION_OUTPUT.as_slice() }).unwrap();
     assert_eq!(actual_result, expected_result);
@@ -29,5 +29,6 @@ fn test_function() {
 fn my_function(input: input::ResponseData) -> Result<output::FunctionResult> {
     Ok(output::FunctionResult {
         name: Some(format!("new name: {}", input.id)),
+        country: Some("CA".to_string()),
     })
 }
