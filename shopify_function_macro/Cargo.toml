@@ -12,6 +12,6 @@ proc-macro = true
 [dependencies]
 syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
-proc-macro2 = "1.0.43"
+proc-macro2 = "1.0.83"
 convert_case = "0.6.0"
 graphql_client_codegen = "0.14.0"
