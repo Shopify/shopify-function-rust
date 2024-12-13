@@ -7,9 +7,10 @@ license = "MIT"
 description = "Crate to write Shopify Functions in Rust."
 
 [dependencies]
-serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0"
-shopify_function_macro = { version = "0.8.1", path = "../shopify_function_macro" }
+serde = { version = "1.0.215", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+miniserde = { version = "0.1", optional = true }
+shopify_function_macro = { version = "0.8.1", path = "../shopify_function_macro", default-features = false }
 
 # Use the `small` feature of ryu (transitive dependency through serde_json)
 # to shave off ~9kb of the Wasm binary size.
@@ -17,6 +18,17 @@ shopify_function_macro = { version = "0.8.1", path = "../shopify_function_macro"
 version = "1"
 features = ["small"]
 
-[dev-dependencies]
-graphql_client = "0.14.0"
-graphql_client_codegen = "0.14.0"
+[features]
+default = ["serde"]
+serde = ["dep:serde", "dep:serde_json", "shopify_function_macro/serde"]
+miniserde = ["dep:miniserde", "shopify_function_macro/miniserde"]
+
+[[example]]
+name = "example_serde"
+path = "examples/example_serde.rs"
+required-features = ["serde"]
+
+[[example]]
+name = "example_miniserde"
+path = "examples/example_miniserde.rs"
+required-features = ["miniserde"]

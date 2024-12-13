@@ -10,8 +10,12 @@ description = "Macros for the `shopify_function` crate."
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0", features = ["full"] }
+syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0.92"
-convert_case = "0.6.0"
-graphql_client_codegen = "0.14.0"
+bluejay-typegen-codegen = { git = "https://github.com/Shopify/bluejay", rev = "fc9a7417ab0275151f5e3fa38d78839d5222618e", default-features = false }
+
+[features]
+default = ["serde"]
+serde = ["bluejay-typegen-codegen/serde"]
+miniserde = ["bluejay-typegen-codegen/miniserde"]
