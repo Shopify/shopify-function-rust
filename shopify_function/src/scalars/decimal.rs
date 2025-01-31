@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::ops::Deref;
 
 /// Convenience wrapper for converting between Shopify's `Decimal` scalar, which
@@ -12,6 +13,12 @@ impl Decimal {
     /// Access the value as an `f64`
     pub fn as_f64(&self) -> f64 {
         self.0
+    }
+}
+
+impl fmt::Display for Decimal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(ryu::Buffer::new().format(self.0))
     }
 }
 
@@ -79,5 +86,13 @@ mod tests {
         let decimal = Decimal(123.4);
         let json_value = serde_json::to_value(decimal).expect("Error serializing to JSON");
         assert_eq!(serde_json::json!("123.4"), json_value);
+    }
+
+    #[test]
+    fn test_display_formatting() {
+        assert_eq!(Decimal(123.45).to_string(), "123.45");
+        assert_eq!(Decimal(123.0).to_string(), "123.0");
+        assert_eq!(Decimal(0.0).to_string(), "0.0");
+        assert_eq!(Decimal(-5.678).to_string(), "-5.678");
     }
 }
