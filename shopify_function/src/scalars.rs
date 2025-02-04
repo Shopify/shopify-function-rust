@@ -1,5 +1,8 @@
 mod decimal;
 
+#[cfg(feature = "miniserde")]
+mod decimal_miniserde;
+
 pub type Boolean = bool;
 pub type Float = f64;
 pub type Int = i64;
