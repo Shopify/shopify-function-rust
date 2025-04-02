@@ -16,18 +16,13 @@
 //! }
 //! ```
 
-pub use shopify_function_macro::{generate_types, shopify_function, shopify_function_target};
+pub use shopify_function_macro::shopify_function;
 
-#[doc(hidden)]
-pub mod enums;
-/// Only used for struct generation.
-#[doc(hidden)]
 pub mod scalars;
 
 pub mod prelude {
-    pub use crate::enums::*;
     pub use crate::scalars::*;
-    pub use shopify_function_macro::{generate_types, shopify_function, shopify_function_target};
+    pub use shopify_function_macro::{shopify_function, typegen};
 }
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -45,6 +40,9 @@ where
     let parsed_payload: P = serde_json::from_str(payload)?;
     f(parsed_payload)
 }
+
+pub use serde;
+pub use serde_json;
 
 #[cfg(test)]
 mod tests {}

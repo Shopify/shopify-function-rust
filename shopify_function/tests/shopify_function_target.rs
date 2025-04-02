@@ -9,28 +9,35 @@ const TARGET_A_INPUT: &str = r#"{
 }"#;
 static mut TARGET_A_OUTPUT: Vec<u8> = vec![];
 
+#[typegen("./tests/fixtures/schema_with_targets.graphql", enums_as_str = ["CountryCode"])]
+mod schema_with_targets {
+    #[query("./tests/fixtures/input.graphql")]
+    pub mod target_a {}
+
+    #[query("./tests/fixtures/b.graphql")]
+    pub mod target_b {}
+}
+
 #[test]
 fn test_target_a_export() {
     let expected_result = r#"{"status":200}"#;
-    target_a::export();
+    target_a_export();
     let actual_result = std::str::from_utf8(unsafe { TARGET_A_OUTPUT.as_slice() }).unwrap();
     assert_eq!(actual_result, expected_result);
 }
 
-#[shopify_function_target(
+#[shopify_function(
   // Implicit target = "test.target-a"
-  query_path = "./tests/fixtures/input.graphql",
-  schema_path = "./tests/fixtures/schema_with_targets.graphql",
   input_stream = std::io::Cursor::new(TARGET_A_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut TARGET_A_OUTPUT }
 )]
 fn target_a(
-    input: target_a::input::ResponseData,
-) -> Result<target_a::output::FunctionTargetAResult> {
+    input: schema_with_targets::target_a::Input,
+) -> Result<schema_with_targets::FunctionTargetAResult> {
     if input.country != Some("CA".to_string()) {
         panic!("Expected CountryCode to be the CA String")
     }
-    Ok(target_a::output::FunctionTargetAResult { status: Some(200) })
+    Ok(schema_with_targets::FunctionTargetAResult { status: Some(200) })
 }
 
 const TARGET_B_INPUT: &str = r#"{
@@ -42,47 +49,27 @@ static mut TARGET_B_OUTPUT: Vec<u8> = vec![];
 #[test]
 fn test_mod_b_export() {
     let expected_result = r#"{"name":"new name: gid://shopify/Order/1234567890","country":"CA"}"#;
-    mod_b::export();
+    some_function_export();
     let actual_result = std::str::from_utf8(unsafe { TARGET_B_OUTPUT.as_slice() }).unwrap();
     assert_eq!(actual_result, expected_result);
 }
 
-#[shopify_function_target(
-  target = "test.target-b",
-  module_name = "mod_b",
-  query_path = "./tests/fixtures/b.graphql",
-  schema_path = "./tests/fixtures/schema_with_targets.graphql",
+#[shopify_function(
   input_stream = std::io::Cursor::new(TARGET_B_INPUT.as_bytes().to_vec()),
   output_stream = unsafe { &mut TARGET_B_OUTPUT },
 )]
 fn some_function(
-    input: mod_b::input::ResponseData,
-) -> Result<mod_b::output::FunctionTargetBResult> {
-    Ok(mod_b::output::FunctionTargetBResult {
+    input: schema_with_targets::target_b::Input,
+) -> Result<schema_with_targets::FunctionTargetBResult> {
+    Ok(schema_with_targets::FunctionTargetBResult {
         name: Some(format!("new name: {}", input.id)),
         country: Some("CA".to_string()),
     })
 }
 
-// Verify that the CountryCode enum is generated when `extern_enums = []`
-#[shopify_function_target(
-  target = "test.target-a",
-  module_name = "country_enum",
-  query_path = "./tests/fixtures/input.graphql",
-  schema_path = "./tests/fixtures/schema_with_targets.graphql",
-  extern_enums = []
-)]
-fn _with_generated_country_code(
-    input: country_enum::input::ResponseData,
-) -> Result<country_enum::output::FunctionTargetAResult> {
-    use country_enum::*;
-
-    let status = match input.country {
-        Some(input::CountryCode::CA) => 200,
-        _ => 201,
-    };
-
-    Ok(output::FunctionTargetAResult {
-        status: Some(status),
-    })
+#[typegen("./tests/fixtures/schema_with_targets.graphql", enums_as_str = ["CountryCode"])]
+mod schema_with_country_enum {
+    pub type Id = String;
+    pub type Void = ();
 }
+// const _: schema_with_country_enum::CountryCode = schema_with_country_enum::CountryCode::Ca;
