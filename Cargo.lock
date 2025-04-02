@@ -21,17 +21,7 @@ checksum = "3a8241f3ebb85c056b509d4327ad0358fbbba6ffb340bf388f26350aeda225b1"
 [[package]]
 name = "bluejay-core"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=e6c1ad3a0a13345fb4a1dc620d193cc202ab230a#e6c1ad3a0a13345fb4a1dc620d193cc202ab230a"
-dependencies = [
- "enum-as-inner",
- "itertools",
- "serde_json",
- "strum",
-]
-
-[[package]]
-name = "bluejay-core"
-version = "0.3.0"
+source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
  "enum-as-inner",
  "itertools",
@@ -42,22 +32,10 @@ dependencies = [
 [[package]]
 name = "bluejay-parser"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=e6c1ad3a0a13345fb4a1dc620d193cc202ab230a#e6c1ad3a0a13345fb4a1dc620d193cc202ab230a"
+source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
  "ariadne",
- "bluejay-core 0.2.0",
- "enum-as-inner",
- "itertools",
- "logos",
- "strum",
-]
-
-[[package]]
-name = "bluejay-parser"
-version = "0.3.0"
-dependencies = [
- "ariadne",
- "bluejay-core 0.3.0",
+ "bluejay-core",
  "enum-as-inner",
  "itertools",
  "logos",
@@ -67,7 +45,7 @@ dependencies = [
 [[package]]
 name = "bluejay-typegen"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=e6c1ad3a0a13345fb4a1dc620d193cc202ab230a#e6c1ad3a0a13345fb4a1dc620d193cc202ab230a"
+source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
  "bluejay-typegen-macro",
  "serde",
@@ -76,25 +54,11 @@ dependencies = [
 [[package]]
 name = "bluejay-typegen-codegen"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=e6c1ad3a0a13345fb4a1dc620d193cc202ab230a#e6c1ad3a0a13345fb4a1dc620d193cc202ab230a"
+source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
- "bluejay-core 0.2.0",
- "bluejay-parser 0.2.0",
- "bluejay-validator 0.2.0",
- "convert_case",
- "itertools",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "bluejay-typegen-codegen"
-version = "0.3.0"
-dependencies = [
- "bluejay-core 0.3.0",
- "bluejay-parser 0.3.0",
- "bluejay-validator 0.3.0",
+ "bluejay-core",
+ "bluejay-parser",
+ "bluejay-validator",
  "convert_case",
  "itertools",
  "proc-macro2",
@@ -105,9 +69,9 @@ dependencies = [
 [[package]]
 name = "bluejay-typegen-macro"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=e6c1ad3a0a13345fb4a1dc620d193cc202ab230a#e6c1ad3a0a13345fb4a1dc620d193cc202ab230a"
+source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
- "bluejay-typegen-codegen 0.2.0",
+ "bluejay-typegen-codegen",
  "quote",
  "syn",
 ]
@@ -115,22 +79,10 @@ dependencies = [
 [[package]]
 name = "bluejay-validator"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=e6c1ad3a0a13345fb4a1dc620d193cc202ab230a#e6c1ad3a0a13345fb4a1dc620d193cc202ab230a"
+source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
- "bluejay-core 0.2.0",
- "bluejay-parser 0.2.0",
- "itertools",
- "paste",
- "seq-macro",
- "serde_json",
-]
-
-[[package]]
-name = "bluejay-validator"
-version = "0.3.0"
-dependencies = [
- "bluejay-core 0.3.0",
- "bluejay-parser 0.3.0",
+ "bluejay-core",
+ "bluejay-parser",
  "itertools",
  "paste",
  "seq-macro",
@@ -357,7 +309,7 @@ dependencies = [
 name = "shopify_function_macro"
 version = "0.8.1"
 dependencies = [
- "bluejay-typegen-codegen 0.3.0",
+ "bluejay-typegen-codegen",
  "proc-macro2",
  "quote",
  "syn",

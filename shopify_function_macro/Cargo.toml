@@ -13,5 +13,5 @@ proc-macro = true
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0.95"
-# bluejay-typegen-codegen = { git = "https://github.com/Shopify/bluejay", rev = "e6c1ad3a0a13345fb4a1dc620d193cc202ab230a" }
-bluejay-typegen-codegen = { path = "../../bluejay/bluejay-typegen-codegen" }
+bluejay-typegen-codegen = { git = "https://github.com/Shopify/bluejay", rev = "0b04d8af24ab384f3e5698146be24d1725436665" }
+# bluejay-typegen-codegen = { path = "../../bluejay/bluejay-typegen-codegen" }
