@@ -72,6 +72,9 @@ input FunctionTargetBResult {
   country: CountryCode
 }
 
+"""
+The country code for the function.
+"""
 enum CountryCode {
   AC
   CA
