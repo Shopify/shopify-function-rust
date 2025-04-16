@@ -12,6 +12,8 @@ proc-macro = true
 [dependencies]
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
-proc-macro2 = "1.0.95"
-bluejay-typegen-codegen = { git = "https://github.com/Shopify/bluejay", rev = "0b04d8af24ab384f3e5698146be24d1725436665" }
-# bluejay-typegen-codegen = { path = "../../bluejay/bluejay-typegen-codegen" }
+proc-macro2 = "1.0.94"
+# bluejay-typegen-codegen = { git = "https://github.com/Shopify/bluejay", rev = "bc0b5cda13f43c5a9fa8987ed389e757a7936ba1" }
+# bluejay-core = { git = "https://github.com/Shopify/bluejay", rev = "bc0b5cda13f43c5a9fa8987ed389e757a7936ba1" }
+bluejay-typegen-codegen = { path = "../../bluejay/bluejay-typegen-codegen" }
+bluejay-core = { path = "../../bluejay/bluejay-core" }

@@ -1,13 +1,20 @@
 use std::collections::HashMap;
 
-use bluejay_typegen_codegen::{generate_schema, Input as BluejayInput, KnownCustomScalarType};
-
+use bluejay_core::{
+    definition::{
+        EnumTypeDefinition, EnumValueDefinition, InputObjectTypeDefinition, InputValueDefinition,
+    },
+    AsIter,
+};
+use bluejay_typegen_codegen::{
+    generate_schema, names, CodeGenerator, Input as BluejayInput, KnownCustomScalarType,
+    WrappedExecutableType,
+};
 use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
-    self,
     parse::{Parse, ParseStream},
-    parse_macro_input, Expr, FnArg, Token,
+    parse_macro_input, parse_quote, Expr, FnArg, Token,
 };
 
 #[derive(Clone, Default)]
@@ -129,41 +136,15 @@ pub fn shopify_function(
         return error.to_compile_error().into();
     }
 
-    let input_stream = args
-        .input_stream
-        .map_or(quote! { std::io::stdin() }, |stream| {
-            stream.to_token_stream()
-        });
-
-    let output_stream = args
-        .output_stream
-        .map_or(quote! { std::io::stdout() }, |stream| {
-            stream.to_token_stream()
-        });
-
-    let deserialize_line: syn::Stmt = syn::parse_quote! {
-        let input: #input_type = shopify_function::serde_json::from_str(&string).unwrap();
-    };
-
-    let serialize_line: syn::Stmt = syn::parse_quote! {
-        let serialized = shopify_function::serde_json::to_vec(&result).unwrap();
-    };
-
-    let write_line: syn::Stmt = syn::parse_quote! {
-        std::io::Write::write_all(&mut out, serialized.as_slice()).unwrap();
-    };
-
     quote! {
         #[export_name = #function_name_string]
         pub extern "C" fn #export_function_name() {
-            let mut string = String::new();
-            std::io::Read::read_to_string(&mut #input_stream, &mut string).unwrap();
-            #deserialize_line
-            let mut out = #output_stream;
+            let mut context = shopify_function::wasm_api::Context::new();
+            let root_value = context.input_get().unwrap();
+            let mut input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).unwrap();
             let result = #function_name(input).unwrap();
-            #serialize_line
-            #write_line
-            std::io::Write::flush(&mut out).unwrap();
+            shopify_function::wasm_api::Serialize::serialize(&result, &mut context).unwrap();
+            context.finalize_output().unwrap();
         }
 
         #ast
@@ -228,6 +209,8 @@ pub fn typegen(
     let mut input = syn::parse_macro_input!(attr as BluejayInput);
     let mut module = syn::parse_macro_input!(item as syn::ItemMod);
 
+    // TODO: disallow `borrow` value of `true` for `input`
+
     if input.enums_as_str.is_empty() {
         let enums_as_str = DEFAULT_EXTERN_ENUMS
             .iter()
@@ -287,9 +270,187 @@ pub fn typegen(
         ),
     ]);
 
-    if let Err(error) = generate_schema(input, &mut module, known_custom_scalar_types) {
+    if let Err(error) = generate_schema(
+        input,
+        &mut module,
+        known_custom_scalar_types,
+        ShopifyFunctionCodeGenerator,
+    ) {
         return error.to_compile_error().into();
     }
 
     module.to_token_stream().into()
+}
+
+struct ShopifyFunctionCodeGenerator;
+
+impl CodeGenerator for ShopifyFunctionCodeGenerator {
+    fn fields_for_executable_struct(
+        &self,
+        executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
+    ) -> syn::Fields {
+        let once_cell_fields: Vec<syn::Field> = executable_struct
+            .fields()
+            .iter()
+            .map(|field| {
+                let field_name_ident = names::field_ident(field.graphql_name());
+                let ty = executable_struct.type_for_field(field, false);
+
+                parse_quote! {
+                    #field_name_ident: ::std::cell::OnceCell<#ty>
+                }
+            })
+            .collect();
+
+        let fields_named: syn::FieldsNamed = parse_quote! {
+            {
+                __wasm_value: shopify_function::wasm_api::Value,
+                #(#once_cell_fields,)*
+            }
+        };
+        fields_named.into()
+    }
+
+    fn field_accessor_block(
+        &self,
+        _executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
+        field: &bluejay_typegen_codegen::ExecutableField,
+    ) -> syn::Block {
+        let field_name_ident = names::field_ident(field.graphql_name());
+        let field_name_lit_str = syn::LitStr::new(field.graphql_name(), Span::mixed_site());
+
+        let properly_referenced_value =
+            Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
+
+        parse_quote! {
+            {
+                let value = self.#field_name_ident.get_or_init(|| {
+                    let value = self.__wasm_value.get_obj_prop(#field_name_lit_str);
+                    shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
+                });
+                #properly_referenced_value
+            }
+        }
+    }
+
+    fn additional_impls_for_executable_struct(
+        &self,
+        executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
+    ) -> Vec<syn::ItemImpl> {
+        let name_ident = names::type_ident(executable_struct.parent_name());
+
+        let once_cell_field_values: Vec<syn::FieldValue> = executable_struct
+            .fields()
+            .iter()
+            .map(|field| {
+                let field_name_ident = names::field_ident(field.graphql_name());
+
+                parse_quote! {
+                    #field_name_ident: ::std::cell::OnceCell::new()
+                }
+            })
+            .collect();
+
+        vec![parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    Ok(Self {
+                        __wasm_value: *value,
+                        #(#once_cell_field_values),*
+                    })
+                }
+            }
+        }]
+    }
+    fn additional_impls_for_enum(
+        &self,
+        enum_type_definition: &impl EnumTypeDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        let name_ident = names::type_ident(enum_type_definition.name());
+
+        let match_arms: Vec<syn::Arm> = enum_type_definition
+            .enum_value_definitions()
+            .iter()
+            .map(|evd| {
+                let variant_name_ident = names::enum_variant_ident(evd.name());
+                let variant_name_lit_str = syn::LitStr::new(evd.name(), Span::mixed_site());
+                parse_quote! {
+                    Self::#variant_name_ident => context.write_utf8_str(#variant_name_lit_str),
+                }
+            })
+            .collect();
+
+        let serialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Serialize for #name_ident {
+                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    match self {
+                        #(#match_arms)*
+                        Self::Other => panic!("Cannot serialize `Other` variant"),
+                    }
+                }
+            }
+        };
+
+        vec![serialize_impl]
+    }
+
+    fn additional_impls_for_input_object(
+        &self,
+        #[allow(unused_variables)] input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        let name_ident = names::type_ident(input_object_type_definition.name());
+
+        let field_statements: Vec<syn::Stmt> = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .flat_map(|ivd| {
+                let field_name_ident = names::field_ident(ivd.name());
+                let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
+
+                vec![
+                    parse_quote! {
+                        context.write_utf8_str(#field_name_lit_str)?;
+                    },
+                    parse_quote! {
+                        self.#field_name_ident.serialize(context)?;
+                    },
+                ]
+            })
+            .collect();
+
+        let num_fields = input_object_type_definition.input_field_definitions().len();
+
+        let serialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Serialize for #name_ident {
+                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    context.write_object(
+                        |context| {
+                            #(#field_statements)*
+                            Ok(())
+                        },
+                        #num_fields,
+                    )
+                }
+            }
+        };
+
+        vec![serialize_impl]
+    }
+}
+
+impl ShopifyFunctionCodeGenerator {
+    fn reference_variable_for_type(
+        r#type: &WrappedExecutableType,
+        variable: &syn::Ident,
+    ) -> syn::Expr {
+        match r#type {
+            WrappedExecutableType::Base(_) | WrappedExecutableType::Vec(_) => {
+                parse_quote! { &#variable }
+            }
+            WrappedExecutableType::Optional(inner) => {
+                let inner_reference = Self::reference_variable_for_type(inner, variable);
+                parse_quote! { ::std::option::Option::as_ref(#inner_reference) }
+            }
+        }
+    }
 }

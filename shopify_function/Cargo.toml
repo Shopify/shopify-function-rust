@@ -10,7 +10,8 @@ description = "Crate to write Shopify Functions in Rust."
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0"
 shopify_function_macro = { version = "0.8.1", path = "../shopify_function_macro" }
-bluejay-typegen = { git = "https://github.com/Shopify/bluejay", rev = "0b04d8af24ab384f3e5698146be24d1725436665" }
+# shopify_function_wasm_api = { path = "../../shopify-function-wasm-api/api" }
+shopify_function_wasm_api = { git = "https://github.com/Shopify/shopify-function-wasm-api", rev = "85558bccb3af21db271b3095c0d4a382aa5ac410" }
 
 # Use the `small` feature of ryu (transitive dependency through serde_json)
 # to shave off ~9kb of the Wasm binary size.

@@ -1,0 +1,24 @@
+<unknown> 0
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new 9
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new;std::io::stdio::stdin::ha925b0c66fa6e657 14
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new;std::io::stdio::stdin::ha925b0c66fa6e657;std::sync::once_lock::OnceLock<T>::initialize::h801dab80062155d0;__rust_alloc 24
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new;<std::io::stdio::Stdin as std::io::Read>::read_to_end::ha906ddb269081b58 664
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new;<std::io::stdio::Stdin as std::io::Read>::read_to_end::ha906ddb269081b58;<std::io::buffered::bufreader::BufReader<R> as std::io::Read>::read_to_end::h4e0db121bff432d9;memcpy 60
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new;<std::io::stdio::Stdin as std::io::Read>::read_to_end::ha906ddb269081b58;<std::io::buffered::bufreader::BufReader<R> as std::io::Read>::read_to_end::h4e0db121bff432d9;std::io::default_read_to_end::hf7a14d0d461247f9;alloc::raw_vec::RawVecInner<A>::reserve::do_reserve_and_handle::h952c772b76b9006e 185
+<unknown>;_shopify_function_context_new.command_export;_shopify_function_context_new;__rust_alloc 919
+<unknown>;_shopify_function_input_get.command_export;_shopify_function_input_get;shopify_function_wasm_api_provider::read::msgpack_input::MsgpackInput<T>::encode_value::hd4f9e15925379b8d 188
+<unknown>;<unknown> 130
+<unknown>;<unknown>;<unknown> 9
+<unknown>;<unknown>;<unknown>;<unknown> 67
+<unknown>;<unknown>;<unknown>;_shopify_function_input_get_obj_prop.command_export;_shopify_function_input_get_obj_prop;shopify_function_wasm_api_provider::read::msgpack_input::MsgpackInput<T>::get_object_property::h881780c6dd4460cf;memcmp 586
+<unknown>;<unknown> 1285
+<unknown>;<unknown> 18
+<unknown>;<unknown>;<unknown>;<unknown>;<unknown> 54
+<unknown>;<unknown>;<unknown>;<unknown>;shopify_function_realloc.command_export;shopify_function_realloc;__rust_alloc;__rdl_alloc;malloc 1310
+<unknown>;<unknown>;<unknown> 1582
+<unknown>;_shopify_function_output_new_object.command_export 397
+<unknown>;_shopify_function_output_new_object.command_export;_shopify_function_output_new_object;shopify_function_wasm_api_provider::write::<impl shopify_function_wasm_api_provider::Context>::start_object::h24fe964452500f51;rmp::encode::write_map_len::h030c4f6a591609a5;alloc::raw_vec::RawVec<T,A>::grow_one::h3f81635d444487e6 62
+<unknown>;_shopify_function_output_new_array.command_export;__wasm_call_dtors 1392
+<unknown>;_shopify_function_output_finalize.command_export;_shopify_function_output_finalize;<std::io::stdio::Stdout as std::io::Write>::flush::h526d8219b07e7a8c;<std::io::stdio::StdoutLock as std::io::Write>::flush::he4b072aad8b625ca;wasi::lib_generated::fd_write::h2da36a9c1b707a12 3399
+<unknown>;_shopify_function_output_finalize.command_export;_shopify_function_output_finalize;__rust_dealloc 105
+<unknown>;<unknown>;<unknown> 637

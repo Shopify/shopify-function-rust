@@ -1,0 +1,63 @@
+type Query {
+    cart: Cart!
+}
+
+type Cart {
+    lines: [CartLine!]!
+}
+
+type CartLine {
+    quantity: Int!
+}
+
+type Mutation {
+    handleFunctionRunResult(functionRunResult: FunctionRunResult!): Void
+}
+
+scalar Void
+
+"""
+The run target result.
+"""
+input FunctionRunResult {
+  """
+  Errors.
+  """
+  errors: [FunctionError!]!
+}
+
+"""
+A Function error for a path.
+"""
+input FunctionError {
+  """
+  Returns a message describing the error.
+  """
+  localizedMessage: String!
+
+  """
+  Specifies the path/target for use by the UI.
+  """
+  target: String!
+}
+
+enum LanguageCode {
+    EN
+    DE
+    FR
+    ES
+    IT
+    JA
+}
+
+enum CountryCode {
+    US
+    CA
+    MX
+}
+
+enum CurrencyCode {
+    USD
+    CAD
+    MXN
+}
