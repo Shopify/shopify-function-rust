@@ -31,7 +31,8 @@ dependencies = [
 
 [[package]]
 name = "bluejay-core"
-version = "0.3.0"
+version = "0.2.0"
+source = "git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03#8a30ed513dd2bfe1d63295960bbfb92cc310ef03"
 dependencies = [
  "enum-as-inner",
  "itertools",
@@ -45,7 +46,7 @@ version = "0.2.0"
 source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
  "ariadne",
- "bluejay-core 0.2.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
  "enum-as-inner",
  "itertools",
  "logos",
@@ -54,10 +55,11 @@ dependencies = [
 
 [[package]]
 name = "bluejay-parser"
-version = "0.3.0"
+version = "0.2.0"
+source = "git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03#8a30ed513dd2bfe1d63295960bbfb92cc310ef03"
 dependencies = [
  "ariadne",
- "bluejay-core 0.3.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
  "enum-as-inner",
  "itertools",
  "logos",
@@ -78,9 +80,9 @@ name = "bluejay-typegen-codegen"
 version = "0.2.0"
 source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
- "bluejay-core 0.2.0",
- "bluejay-parser 0.2.0",
- "bluejay-validator 0.2.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
+ "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
+ "bluejay-validator 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
  "convert_case",
  "itertools",
  "proc-macro2",
@@ -90,11 +92,12 @@ dependencies = [
 
 [[package]]
 name = "bluejay-typegen-codegen"
-version = "0.3.0"
+version = "0.2.0"
+source = "git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03#8a30ed513dd2bfe1d63295960bbfb92cc310ef03"
 dependencies = [
- "bluejay-core 0.3.0",
- "bluejay-parser 0.3.0",
- "bluejay-validator 0.3.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
+ "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
+ "bluejay-validator 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
  "convert_case",
  "itertools",
  "proc-macro2",
@@ -117,8 +120,8 @@ name = "bluejay-validator"
 version = "0.2.0"
 source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
 dependencies = [
- "bluejay-core 0.2.0",
- "bluejay-parser 0.2.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
+ "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
  "itertools",
  "paste",
  "seq-macro",
@@ -127,10 +130,11 @@ dependencies = [
 
 [[package]]
 name = "bluejay-validator"
-version = "0.3.0"
+version = "0.2.0"
+source = "git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03#8a30ed513dd2bfe1d63295960bbfb92cc310ef03"
 dependencies = [
- "bluejay-core 0.3.0",
- "bluejay-parser 0.3.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
+ "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
  "itertools",
  "paste",
  "seq-macro",
@@ -364,8 +368,8 @@ dependencies = [
 name = "shopify_function_macro"
 version = "0.8.1"
 dependencies = [
- "bluejay-core 0.3.0",
- "bluejay-typegen-codegen 0.3.0",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
+ "bluejay-typegen-codegen 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8a30ed513dd2bfe1d63295960bbfb92cc310ef03)",
  "proc-macro2",
  "quote",
  "syn",

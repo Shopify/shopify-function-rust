@@ -46,5 +46,42 @@ pub use serde_json;
 
 pub use shopify_function_wasm_api as wasm_api;
 
+pub struct Iter<T: wasm_api::Deserialize> {
+    value: wasm_api::Value,
+    index: usize,
+    len: usize,
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<T: wasm_api::Deserialize> wasm_api::Deserialize for Iter<T> {
+    fn deserialize(value: &wasm_api::Value) -> std::result::Result<Self, wasm_api::read::Error> {
+        if let Some(len) = value.array_len() {
+            Ok(Self {
+                value: *value,
+                index: 0,
+                len,
+                _marker: std::marker::PhantomData,
+            })
+        } else {
+            Err(wasm_api::read::Error::InvalidType)
+        }
+    }
+}
+
+impl<T: wasm_api::Deserialize> Iterator for Iter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        if self.index >= self.len {
+            return None;
+        }
+        let value = self.value.get_at_index(self.index);
+        self.index += 1;
+        // need to unwrap here because we don't want programs to need
+        // to handle errors here
+        Some(T::deserialize(&value).unwrap())
+    }
+}
+
 #[cfg(test)]
 mod tests {}

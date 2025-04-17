@@ -7,8 +7,8 @@ use bluejay_core::{
     AsIter,
 };
 use bluejay_typegen_codegen::{
-    generate_schema, names, CodeGenerator, Input as BluejayInput, KnownCustomScalarType,
-    WrappedExecutableType,
+    generate_schema, names, CodeGenerator, ExecutableStruct, Input as BluejayInput,
+    KnownCustomScalarType, WrappedExecutableType,
 };
 use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
@@ -287,51 +287,37 @@ struct ShopifyFunctionCodeGenerator;
 impl CodeGenerator for ShopifyFunctionCodeGenerator {
     fn fields_for_executable_struct(
         &self,
-        executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
+        _executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
     ) -> syn::Fields {
-        let once_cell_fields: Vec<syn::Field> = executable_struct
-            .fields()
-            .iter()
-            .map(|field| {
-                let field_name_ident = names::field_ident(field.graphql_name());
-                let ty = executable_struct.type_for_field(field, false);
-
-                parse_quote! {
-                    #field_name_ident: ::std::cell::OnceCell<#ty>
-                }
-            })
-            .collect();
-
         let fields_named: syn::FieldsNamed = parse_quote! {
             {
-                __wasm_value: shopify_function::wasm_api::Value,
-                #(#once_cell_fields,)*
+                value: shopify_function::wasm_api::Value,
             }
         };
         fields_named.into()
     }
 
-    fn field_accessor_block(
-        &self,
-        _executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
-        field: &bluejay_typegen_codegen::ExecutableField,
-    ) -> syn::Block {
-        let field_name_ident = names::field_ident(field.graphql_name());
-        let field_name_lit_str = syn::LitStr::new(field.graphql_name(), Span::mixed_site());
+    // fn field_accessor_block(
+    //     &self,
+    //     _executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
+    //     field: &bluejay_typegen_codegen::ExecutableField,
+    // ) -> syn::Block {
+    //     let field_name_ident = names::field_ident(field.graphql_name());
+    //     let field_name_lit_str = syn::LitStr::new(field.graphql_name(), Span::mixed_site());
 
-        let properly_referenced_value =
-            Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
+    //     let properly_referenced_value =
+    //         Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
 
-        parse_quote! {
-            {
-                let value = self.#field_name_ident.get_or_init(|| {
-                    let value = self.__wasm_value.get_obj_prop(#field_name_lit_str);
-                    shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
-                });
-                #properly_referenced_value
-            }
-        }
-    }
+    //     parse_quote! {
+    //         {
+    //             let value = self.#field_name_ident.get_or_init(|| {
+    //                 let value = self.__wasm_value.get_obj_prop(#field_name_lit_str);
+    //                 shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
+    //             });
+    //             #properly_referenced_value
+    //         }
+    //     }
+    // }
 
     fn additional_impls_for_executable_struct(
         &self,
@@ -339,28 +325,40 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
     ) -> Vec<syn::ItemImpl> {
         let name_ident = names::type_ident(executable_struct.parent_name());
 
-        let once_cell_field_values: Vec<syn::FieldValue> = executable_struct
+        let deserialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    Ok(Self {
+                        value: *value,
+                    })
+                }
+            }
+        };
+
+        let accessors: Vec<syn::ImplItemFn> = executable_struct
             .fields()
             .iter()
             .map(|field| {
                 let field_name_ident = names::field_ident(field.graphql_name());
+                let field_name_lit_str = syn::LitStr::new(field.graphql_name(), Span::mixed_site());
+                let field_type = Self::type_for_field(executable_struct, field.r#type());
 
                 parse_quote! {
-                    #field_name_ident: ::std::cell::OnceCell::new()
+                    pub fn #field_name_ident(&self) -> #field_type {
+                        let value = self.value.get_obj_prop(#field_name_lit_str);
+                        shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
+                    }
                 }
             })
             .collect();
 
-        vec![parse_quote! {
-            impl shopify_function::wasm_api::Deserialize for #name_ident {
-                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
-                    Ok(Self {
-                        __wasm_value: *value,
-                        #(#once_cell_field_values),*
-                    })
-                }
+        let accessor_impl = parse_quote! {
+            impl #name_ident {
+                #(#accessors)*
             }
-        }]
+        };
+
+        vec![deserialize_impl, accessor_impl]
     }
 
     fn additional_impls_for_executable_enum(
@@ -511,17 +509,19 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
 }
 
 impl ShopifyFunctionCodeGenerator {
-    fn reference_variable_for_type(
+    fn type_for_field(
+        executable_struct: &ExecutableStruct,
         r#type: &WrappedExecutableType,
-        variable: &syn::Ident,
-    ) -> syn::Expr {
+    ) -> syn::Type {
         match r#type {
-            WrappedExecutableType::Base(_) | WrappedExecutableType::Vec(_) => {
-                parse_quote! { &#variable }
-            }
+            WrappedExecutableType::Base(base) => executable_struct.compute_base_type(base),
             WrappedExecutableType::Optional(inner) => {
-                let inner_reference = Self::reference_variable_for_type(inner, variable);
-                parse_quote! { ::std::option::Option::as_ref(#inner_reference) }
+                let inner_type = Self::type_for_field(executable_struct, inner);
+                parse_quote! { ::std::option::Option<#inner_type> }
+            }
+            WrappedExecutableType::Vec(inner) => {
+                let inner_type = Self::type_for_field(executable_struct, inner);
+                parse_quote! { shopify_function::Iter<#inner_type> }
             }
         }
     }

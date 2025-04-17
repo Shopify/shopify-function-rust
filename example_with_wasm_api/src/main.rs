@@ -10,7 +10,7 @@ mod schema {
 fn run(input: schema::input::Input) -> shopify_function::Result<schema::FunctionRunResult> {
     let mut errors = vec![];
 
-    if input.cart().lines().iter().any(|line| line.quantity() > &1) {
+    if input.cart().lines().any(|line| line.quantity() > 1) {
         errors.push(schema::FunctionError {
             localized_message: "Quantity must be 1".to_string(),
             target: "cart.lines.quantity".to_string(),
