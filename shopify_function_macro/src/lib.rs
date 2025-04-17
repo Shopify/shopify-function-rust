@@ -362,6 +362,40 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             }
         }]
     }
+
+    fn additional_impls_for_executable_enum(
+        &self,
+        executable_enum: &bluejay_typegen_codegen::ExecutableEnum,
+    ) -> Vec<syn::ItemImpl> {
+        let name_ident = names::type_ident(executable_enum.parent_name());
+
+        let match_arms: Vec<syn::Arm> = executable_enum
+            .variants()
+            .iter()
+            .map(|variant| {
+                let variant_name_ident = names::enum_variant_ident(variant.parent_name());
+                let variant_name_lit_str = syn::LitStr::new(variant.parent_name(), Span::mixed_site());
+
+                parse_quote! {
+                    #variant_name_lit_str => shopify_function::wasm_api::Deserialize::deserialize(value).map(Self::#variant_name_ident),
+                }
+            }).collect();
+
+        vec![parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    let typename = value.get_obj_prop("__typename");
+                    let typename_str: String = shopify_function::wasm_api::Deserialize::deserialize(&typename)?;
+
+                    match typename_str.as_str() {
+                        #(#match_arms)*
+                        _ => Ok(Self::Other),
+                    }
+                }
+            }
+        }]
+    }
+
     fn additional_impls_for_enum(
         &self,
         enum_type_definition: &impl EnumTypeDefinition,
@@ -430,6 +464,44 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                         },
                         #num_fields,
                     )
+                }
+            }
+        };
+
+        vec![serialize_impl]
+    }
+
+    fn additional_impls_for_one_of_input_object(
+        &self,
+        input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        let name_ident = names::type_ident(input_object_type_definition.name());
+
+        let match_arms: Vec<syn::Arm> = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|ivd| {
+                let variant_ident = names::enum_variant_ident(ivd.name());
+                let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
+
+                parse_quote! {
+                    Self::#variant_ident(value) => {
+                        context.write_utf8_str(#field_name_lit_str)?;
+                        shopify_function::wasm_api::Serialize::serialize(value, context)?;
+                    }
+                }
+            })
+            .collect();
+
+        let serialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Serialize for #name_ident {
+                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    context.write_object(|context| {
+                        match self {
+                            #(#match_arms)*
+                        }
+                        Ok(())
+                    }, 1)
                 }
             }
         };
