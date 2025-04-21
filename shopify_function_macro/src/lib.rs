@@ -277,7 +277,7 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident
 ///
 /// The macro takes the following parameters:
 /// - `query_path`: A path to a GraphQL query, whose result will be used
-///    as the input for the function invocation. The query MUST be named "Input".
+///   as the input for the function invocation. The query MUST be named "Input".
 /// - `schema_path`: A path to Shopify's GraphQL schema definition. Use the CLI
 ///   to download a fresh copy.
 /// - `target` (optional): The API-specific handle for the target if the function name does not match the target handle as `snake_case`
@@ -395,7 +395,7 @@ pub fn shopify_function_target(
 ///
 /// The macro takes the following parameters:
 /// - `query_path`: A path to a GraphQL query, whose result will be used
-///    as the input for the function invocation. The query MUST be named "Input".
+///   as the input for the function invocation. The query MUST be named "Input".
 /// - `schema_path`: A path to Shopify's GraphQL schema definition. Use the CLI
 ///   to download a fresh copy.
 /// - `extern_enums` (optional): A list of Enums for which an external type should be used.
