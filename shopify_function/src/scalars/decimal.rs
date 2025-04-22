@@ -58,6 +58,25 @@ impl From<f64> for Decimal {
     }
 }
 
+impl crate::wasm_api::Deserialize for Decimal {
+    fn deserialize(value: &crate::wasm_api::Value) -> Result<Self, crate::wasm_api::read::Error> {
+        let string_value: String = crate::wasm_api::Deserialize::deserialize(value)?;
+        string_value
+            .parse()
+            .map(Self)
+            .map_err(|_| crate::wasm_api::read::Error::InvalidType)
+    }
+}
+
+impl crate::wasm_api::Serialize for Decimal {
+    fn serialize(
+        &self,
+        context: &mut crate::wasm_api::Context,
+    ) -> Result<(), crate::wasm_api::write::Error> {
+        crate::wasm_api::Serialize::serialize(self.0.to_string().as_str(), context)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Decimal;

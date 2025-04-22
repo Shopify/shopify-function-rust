@@ -53,6 +53,17 @@ pub struct Iter<T: wasm_api::Deserialize> {
     _marker: std::marker::PhantomData<T>,
 }
 
+impl<T: wasm_api::Deserialize> Clone for Iter<T> {
+    fn clone(&self) -> Self {
+        Self {
+            value: self.value,
+            index: self.index,
+            len: self.len,
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
 impl<T: wasm_api::Deserialize> wasm_api::Deserialize for Iter<T> {
     fn deserialize(value: &wasm_api::Value) -> std::result::Result<Self, wasm_api::read::Error> {
         if let Some(len) = value.array_len() {

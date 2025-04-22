@@ -258,7 +258,7 @@ pub fn typegen(
             String::from("Json"),
             KnownCustomScalarType {
                 type_for_borrowed: None,
-                type_for_owned: syn::parse_quote! { ::shopify_function::serde_json::Value },
+                type_for_owned: syn::parse_quote! { ::shopify_function::wasm_api::Value },
             },
         ),
         (
@@ -297,28 +297,6 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         fields_named.into()
     }
 
-    // fn field_accessor_block(
-    //     &self,
-    //     _executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
-    //     field: &bluejay_typegen_codegen::ExecutableField,
-    // ) -> syn::Block {
-    //     let field_name_ident = names::field_ident(field.graphql_name());
-    //     let field_name_lit_str = syn::LitStr::new(field.graphql_name(), Span::mixed_site());
-
-    //     let properly_referenced_value =
-    //         Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
-
-    //     parse_quote! {
-    //         {
-    //             let value = self.#field_name_ident.get_or_init(|| {
-    //                 let value = self.__wasm_value.get_obj_prop(#field_name_lit_str);
-    //                 shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
-    //             });
-    //             #properly_referenced_value
-    //         }
-    //     }
-    // }
-
     fn additional_impls_for_executable_struct(
         &self,
         executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
@@ -345,7 +323,12 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
 
                 parse_quote! {
                     pub fn #field_name_ident(&self) -> #field_type {
-                        let value = self.value.get_obj_prop(#field_name_lit_str);
+                        static INTERNED_FIELD_NAME: ::std::sync::OnceLock<shopify_function::wasm_api::InternedStringId> = ::std::sync::OnceLock::new();
+                        let interned_string_id = *INTERNED_FIELD_NAME.get_or_init(|| {
+                            self.value.intern_utf8_str(#field_name_lit_str)
+                        });
+                        let value = self.value.get_interned_obj_prop(interned_string_id);
+                        // let value = self.value.get_obj_prop(#field_name_lit_str);
                         shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
                     }
                 }
@@ -400,7 +383,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
     ) -> Vec<syn::ItemImpl> {
         let name_ident = names::type_ident(enum_type_definition.name());
 
-        let match_arms: Vec<syn::Arm> = enum_type_definition
+        let serialize_match_arms: Vec<syn::Arm> = enum_type_definition
             .enum_value_definitions()
             .iter()
             .map(|evd| {
@@ -416,14 +399,40 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             impl shopify_function::wasm_api::Serialize for #name_ident {
                 fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
                     match self {
-                        #(#match_arms)*
+                        #(#serialize_match_arms)*
                         Self::Other => panic!("Cannot serialize `Other` variant"),
                     }
                 }
             }
         };
 
-        vec![serialize_impl]
+        let deserialize_match_arms: Vec<syn::Arm> = enum_type_definition
+            .enum_value_definitions()
+            .iter()
+            .map(|evd| {
+                let variant_name_ident = names::enum_variant_ident(evd.name());
+                let variant_name_lit_str = syn::LitStr::new(evd.name(), Span::mixed_site());
+
+                parse_quote! {
+                    #variant_name_lit_str => Ok(Self::#variant_name_ident),
+                }
+            })
+            .collect();
+
+        let deserialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    let str_value: String = shopify_function::wasm_api::Deserialize::deserialize(value)?;
+
+                    match str_value.as_str() {
+                        #(#deserialize_match_arms)*
+                        _ => Ok(Self::Other),
+                    }
+                }
+            }
+        };
+
+        vec![serialize_impl, deserialize_impl]
     }
 
     fn additional_impls_for_input_object(
