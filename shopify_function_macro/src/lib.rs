@@ -287,11 +287,25 @@ struct ShopifyFunctionCodeGenerator;
 impl CodeGenerator for ShopifyFunctionCodeGenerator {
     fn fields_for_executable_struct(
         &self,
-        _executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
+        executable_struct: &bluejay_typegen_codegen::ExecutableStruct,
     ) -> syn::Fields {
+        let once_cell_fields: Vec<syn::Field> = executable_struct
+            .fields()
+            .iter()
+            .map(|field| {
+                let field_name_ident = names::field_ident(field.graphql_name());
+                let field_type = Self::type_for_field(executable_struct, field.r#type(), false);
+
+                parse_quote! {
+                    #field_name_ident: ::std::cell::OnceCell<#field_type>
+                }
+            })
+            .collect();
+
         let fields_named: syn::FieldsNamed = parse_quote! {
             {
-                value: shopify_function::wasm_api::Value,
+                __wasm_value: shopify_function::wasm_api::Value,
+                #(#once_cell_fields),*
             }
         };
         fields_named.into()
@@ -303,11 +317,24 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
     ) -> Vec<syn::ItemImpl> {
         let name_ident = names::type_ident(executable_struct.parent_name());
 
+        let once_cell_field_values: Vec<syn::FieldValue> = executable_struct
+            .fields()
+            .iter()
+            .map(|field| {
+                let field_name_ident = names::field_ident(field.graphql_name());
+
+                parse_quote! {
+                    #field_name_ident: ::std::cell::OnceCell::new()
+                }
+            })
+            .collect();
+
         let deserialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Deserialize for #name_ident {
                 fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
                     Ok(Self {
-                        value: *value,
+                        __wasm_value: *value,
+                        #(#once_cell_field_values),*
                     })
                 }
             }
@@ -319,17 +346,23 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             .map(|field| {
                 let field_name_ident = names::field_ident(field.graphql_name());
                 let field_name_lit_str = syn::LitStr::new(field.graphql_name(), Span::mixed_site());
-                let field_type = Self::type_for_field(executable_struct, field.r#type());
+                let field_type = Self::type_for_field(executable_struct, field.r#type(), true);
+
+                let properly_referenced_value =
+                    Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
 
                 parse_quote! {
                     pub fn #field_name_ident(&self) -> #field_type {
                         static INTERNED_FIELD_NAME: ::std::sync::OnceLock<shopify_function::wasm_api::InternedStringId> = ::std::sync::OnceLock::new();
                         let interned_string_id = *INTERNED_FIELD_NAME.get_or_init(|| {
-                            self.value.intern_utf8_str(#field_name_lit_str)
+                            self.__wasm_value.intern_utf8_str(#field_name_lit_str)
                         });
-                        let value = self.value.get_interned_obj_prop(interned_string_id);
-                        // let value = self.value.get_obj_prop(#field_name_lit_str);
-                        shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
+
+                        let value = self.#field_name_ident.get_or_init(|| {
+                            let value = self.__wasm_value.get_interned_obj_prop(interned_string_id);
+                            shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
+                        });
+                        #properly_referenced_value
                     }
                 }
             })
@@ -521,16 +554,43 @@ impl ShopifyFunctionCodeGenerator {
     fn type_for_field(
         executable_struct: &ExecutableStruct,
         r#type: &WrappedExecutableType,
+        reference: bool,
     ) -> syn::Type {
         match r#type {
-            WrappedExecutableType::Base(base) => executable_struct.compute_base_type(base),
+            WrappedExecutableType::Base(base) => {
+                let base_type = executable_struct.compute_base_type(base);
+                if reference {
+                    parse_quote! { &#base_type }
+                } else {
+                    base_type
+                }
+            }
             WrappedExecutableType::Optional(inner) => {
-                let inner_type = Self::type_for_field(executable_struct, inner);
+                let inner_type = Self::type_for_field(executable_struct, inner, reference);
                 parse_quote! { ::std::option::Option<#inner_type> }
             }
             WrappedExecutableType::Vec(inner) => {
-                let inner_type = Self::type_for_field(executable_struct, inner);
-                parse_quote! { shopify_function::Iter<#inner_type> }
+                let inner_type = Self::type_for_field(executable_struct, inner, false);
+                if reference {
+                    parse_quote! { &[#inner_type] }
+                } else {
+                    parse_quote! { ::std::vec::Vec<#inner_type> }
+                }
+            }
+        }
+    }
+
+    fn reference_variable_for_type(
+        r#type: &WrappedExecutableType,
+        variable: &syn::Ident,
+    ) -> syn::Expr {
+        match r#type {
+            WrappedExecutableType::Base(_) | WrappedExecutableType::Vec(_) => {
+                parse_quote! { &#variable }
+            }
+            WrappedExecutableType::Optional(inner) => {
+                let inner_reference = Self::reference_variable_for_type(inner, variable);
+                parse_quote! { ::std::option::Option::as_ref(#inner_reference) }
             }
         }
     }

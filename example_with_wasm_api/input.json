@@ -2,55 +2,58 @@
     "cart": {
         "lines": [
             {
-                "quantity": 2
+                "quantity": 1,
+                "id": "gid://shopify/Product/1234567890",
+                "merchandise": {
+                    "__typename": "ProductVariant",
+                    "title": "Red",
+                    "id": "gid://shopify/ProductVariant/1234567890"
+                }
             },
             {
-                "quantity": 1
+                "quantity": 1,
+                "id": "gid://shopify/Product/1234567890",
+                "merchandise": {
+                    "__typename": "ProductVariant",
+                    "title": "Red",
+                    "id": "gid://shopify/ProductVariant/1234567890"
+                }
             },
             {
-                "quantity": 1
+                "quantity": 1,
+                "id": "gid://shopify/Product/1234567890",
+                "merchandise": {
+                    "__typename": "ProductVariant",
+                    "title": "Red",
+                    "id": "gid://shopify/ProductVariant/1234567890"
+                }
             },
             {
-                "quantity": 1
+                "quantity": 1,
+                "id": "gid://shopify/Product/1234567890",
+                "merchandise": {
+                    "__typename": "ProductVariant",
+                    "title": "Red",
+                    "id": "gid://shopify/ProductVariant/1234567890"
+                }
             },
             {
-                "quantity": 1
+                "quantity": 1,
+                "id": "gid://shopify/Product/1234567890",
+                "merchandise": {
+                    "__typename": "ProductVariant",
+                    "title": "Red",
+                    "id": "gid://shopify/ProductVariant/1234567890"
+                }
             },
             {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
-            },
-            {
-                "quantity": 1
+                "quantity": 1,
+                "id": "gid://shopify/Product/1234567890",
+                "merchandise": {
+                    "__typename": "ProductVariant",
+                    "title": "Red",
+                    "id": "gid://shopify/ProductVariant/1234567890"
+                }
             }
         ]
     }
