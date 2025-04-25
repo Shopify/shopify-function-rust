@@ -12,47 +12,7 @@ use bluejay_typegen_codegen::{
 };
 use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
-use syn::{
-    parse::{Parse, ParseStream},
-    parse_macro_input, parse_quote, Expr, FnArg, Token,
-};
-
-#[derive(Clone, Default)]
-struct ShopifyFunctionArgs {
-    input_stream: Option<Expr>,
-    output_stream: Option<Expr>,
-}
-
-impl ShopifyFunctionArgs {
-    fn parse<K: syn::parse::Parse, V: syn::parse::Parse>(
-        input: &ParseStream<'_>,
-    ) -> syn::Result<V> {
-        input.parse::<K>()?;
-        input.parse::<Token![=]>()?;
-        let value: V = input.parse()?;
-        if input.lookahead1().peek(Token![,]) {
-            input.parse::<Token![,]>()?;
-        }
-        Ok(value)
-    }
-}
-
-impl Parse for ShopifyFunctionArgs {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let mut args = Self::default();
-        while !input.is_empty() {
-            let lookahead = input.lookahead1();
-            if lookahead.peek(kw::input_stream) {
-                args.input_stream = Some(Self::parse::<kw::input_stream, Expr>(&input)?);
-            } else if lookahead.peek(kw::output_stream) {
-                args.output_stream = Some(Self::parse::<kw::output_stream, Expr>(&input)?);
-            } else {
-                return Err(lookahead.error());
-            }
-        }
-        Ok(args)
-    }
-}
+use syn::{parse_macro_input, parse_quote, FnArg};
 
 fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident, syn::Error> {
     use syn::*;
@@ -114,7 +74,9 @@ pub fn shopify_function(
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let ast = parse_macro_input!(item as syn::ItemFn);
-    let args = parse_macro_input!(attr as ShopifyFunctionArgs);
+    if !attr.is_empty() {
+        return quote! {compile_error!("Shopify functions don't accept attributes");}.into();
+    }
 
     let function_name = &ast.sig.ident;
     let function_name_string = function_name.to_string();
@@ -547,6 +509,27 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         };
 
         vec![serialize_impl]
+    }
+
+    fn attributes_for_enum(
+        &self,
+        _enum_type_definition: &impl EnumTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![parse_quote! { #[derive(Debug, PartialEq)] }]
+    }
+
+    fn attributes_for_input_object(
+        &self,
+        _input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![parse_quote! { #[derive(Debug, PartialEq)] }]
+    }
+
+    fn attributes_for_one_of_input_object(
+        &self,
+        _input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![parse_quote! { #[derive(Debug, PartialEq)] }]
     }
 }
 
