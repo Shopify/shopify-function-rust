@@ -220,7 +220,7 @@ pub fn typegen(
             String::from("Json"),
             KnownCustomScalarType {
                 type_for_borrowed: None,
-                type_for_owned: syn::parse_quote! { ::shopify_function::wasm_api::Value },
+                type_for_owned: syn::parse_quote! { ::shopify_function::scalars::JsonValue },
             },
         ),
         (
