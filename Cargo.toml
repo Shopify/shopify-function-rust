@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "example_with_targets",
-    "example_with_wasm_api",
     "shopify_function",
     "shopify_function_macro",
     "integration_tests",

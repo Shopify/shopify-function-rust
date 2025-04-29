@@ -1,8 +1,0 @@
-[package]
-name = "example_with_wasm_api"
-version = "1.0.0"
-edition = "2021"
-license = "MIT"
-
-[dependencies]
-shopify_function = { path = "../shopify_function" }

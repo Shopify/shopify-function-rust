@@ -63,11 +63,8 @@ fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident
     Ok(&path.path.segments.last().as_ref().unwrap().ident)
 }
 
-/// Generates code for a Function using an explicitly-named target. This will:
-/// - Generate a module to host the generated types.
-/// - Generate types based on the GraphQL schema for the Function input and output.
-/// - Define a wrapper function that's exported to Wasm. The wrapper handles
-///   decoding the input from STDIN, and encoding the output to STDOUT.
+/// Generates code for a Function. This will define a wrapper function that is exported to Wasm.
+/// The wrapper handles deserializing the input and serializing the output.
 #[proc_macro_attribute]
 pub fn shopify_function(
     attr: proc_macro::TokenStream,
@@ -137,11 +134,10 @@ mod kw {
 ///
 /// ### Trait implementations
 ///
-/// By default, will implement `PartialEq`, `Eq`, `Clone`, and `Debug` for all types. Will implement `Copy` for enums.
-/// For types corresponding to values returned from queries,  the relevant deserialization trait for the selected codec
-/// is implemented (e.g. `serde::Deserialize` in the case of `serde`). For types that would
-/// be arguments to a query, the relevant serialization trait for the selected codec is implemented
-/// (e.g. `serde::Serialize` for the `serde` codec).
+/// By default, will implement `PartialEq`, and `Debug` for all input and enum types. Enums will also implement `Copy`.
+/// For types corresponding to values returned from queries,  the `shopify_function::wasm_api::Deserialize` trait
+/// is implemented. For types that would
+/// be arguments to a query, the `shopify_function::wasm_api::Serialize` trait is implemented.
 ///
 /// ### Usage
 ///
@@ -171,7 +167,15 @@ pub fn typegen(
     let mut input = syn::parse_macro_input!(attr as BluejayInput);
     let mut module = syn::parse_macro_input!(item as syn::ItemMod);
 
-    // TODO: disallow `borrow` value of `true` for `input`
+    if let Some(borrow) = input.borrow.as_ref() {
+        if borrow.value() {
+            let error = syn::Error::new_spanned(
+                borrow,
+                "`borrow` attribute must be `false` or omitted for Shopify Functions",
+            );
+            return error.to_compile_error().into();
+        }
+    }
 
     if input.enums_as_str.is_empty() {
         let enums_as_str = DEFAULT_EXTERN_ENUMS
@@ -182,7 +186,7 @@ pub fn typegen(
     }
 
     let string_known_custom_scalar_type = KnownCustomScalarType {
-        type_for_borrowed: Some(syn::parse_quote! { ::std::borrow::Cow<'a, str> }),
+        type_for_borrowed: None, // we disallow borrowing
         type_for_owned: syn::parse_quote! { ::std::string::String },
     };
 
@@ -515,21 +519,21 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         &self,
         _enum_type_definition: &impl EnumTypeDefinition,
     ) -> Vec<syn::Attribute> {
-        vec![parse_quote! { #[derive(Debug, PartialEq)] }]
+        vec![parse_quote! { #[derive(Debug, PartialEq, Clone, Copy)] }]
     }
 
     fn attributes_for_input_object(
         &self,
         _input_object_type_definition: &impl InputObjectTypeDefinition,
     ) -> Vec<syn::Attribute> {
-        vec![parse_quote! { #[derive(Debug, PartialEq)] }]
+        vec![parse_quote! { #[derive(Debug, PartialEq, Clone)] }]
     }
 
     fn attributes_for_one_of_input_object(
         &self,
         _input_object_type_definition: &impl InputObjectTypeDefinition,
     ) -> Vec<syn::Attribute> {
-        vec![parse_quote! { #[derive(Debug, PartialEq)] }]
+        vec![parse_quote! { #[derive(Debug, PartialEq, Clone)] }]
     }
 }
 

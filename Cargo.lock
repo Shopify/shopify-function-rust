@@ -92,7 +92,7 @@ dependencies = [
 [[package]]
 name = "bluejay-core"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece#a9b19a796a85b6faf2bfda7a13f58802dd95cece"
+source = "git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6#e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6"
 dependencies = [
  "enum-as-inner",
  "itertools",
@@ -116,10 +116,10 @@ dependencies = [
 [[package]]
 name = "bluejay-parser"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece#a9b19a796a85b6faf2bfda7a13f58802dd95cece"
+source = "git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6#e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6"
 dependencies = [
  "ariadne",
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
  "enum-as-inner",
  "itertools",
  "logos",
@@ -153,11 +153,11 @@ dependencies = [
 [[package]]
 name = "bluejay-typegen-codegen"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece#a9b19a796a85b6faf2bfda7a13f58802dd95cece"
+source = "git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6#e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6"
 dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
- "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
- "bluejay-validator 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
+ "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
+ "bluejay-validator 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
  "convert_case",
  "itertools",
  "proc-macro2",
@@ -191,10 +191,10 @@ dependencies = [
 [[package]]
 name = "bluejay-validator"
 version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece#a9b19a796a85b6faf2bfda7a13f58802dd95cece"
+source = "git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6#e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6"
 dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
- "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
+ "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
  "itertools",
  "paste",
  "seq-macro",
@@ -329,13 +329,6 @@ dependencies = [
  "bluejay-typegen",
  "serde",
  "serde_json",
- "shopify_function",
-]
-
-[[package]]
-name = "example_with_wasm_api"
-version = "1.0.0"
-dependencies = [
  "shopify_function",
 ]
 
@@ -1308,8 +1301,8 @@ dependencies = [
 name = "shopify_function_macro"
 version = "0.8.1"
 dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
- "bluejay-typegen-codegen 0.2.0 (git+https://github.com/Shopify/bluejay?rev=a9b19a796a85b6faf2bfda7a13f58802dd95cece)",
+ "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
+ "bluejay-typegen-codegen 0.2.0 (git+https://github.com/Shopify/bluejay?rev=e5f2be4aa36455ff6b9cd9d56ed11b5ee83f14d6)",
  "proc-macro2",
  "quote",
  "syn",
@@ -1318,7 +1311,7 @@ dependencies = [
 [[package]]
 name = "shopify_function_wasm_api"
 version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=c1631fc39aab81f48735edccdb49200b5582793d#c1631fc39aab81f48735edccdb49200b5582793d"
+source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=cb29cffe1bcf36e4a020e4682e7147c2cca70e58#cb29cffe1bcf36e4a020e4682e7147c2cca70e58"
 dependencies = [
  "rmp-serde",
  "serde_json",
@@ -1330,7 +1323,7 @@ dependencies = [
 [[package]]
 name = "shopify_function_wasm_api_core"
 version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=c1631fc39aab81f48735edccdb49200b5582793d#c1631fc39aab81f48735edccdb49200b5582793d"
+source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=cb29cffe1bcf36e4a020e4682e7147c2cca70e58#cb29cffe1bcf36e4a020e4682e7147c2cca70e58"
 dependencies = [
  "strum",
 ]
@@ -1338,7 +1331,7 @@ dependencies = [
 [[package]]
 name = "shopify_function_wasm_api_provider"
 version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=c1631fc39aab81f48735edccdb49200b5582793d#c1631fc39aab81f48735edccdb49200b5582793d"
+source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=cb29cffe1bcf36e4a020e4682e7147c2cca70e58#cb29cffe1bcf36e4a020e4682e7147c2cca70e58"
 dependencies = [
  "bumpalo",
  "rmp",
