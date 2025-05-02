@@ -10,6 +10,7 @@ use bluejay_typegen_codegen::{
     generate_schema, names, CodeGenerator, ExecutableStruct, Input as BluejayInput,
     KnownCustomScalarType, WrappedExecutableType,
 };
+use convert_case::{Case, Casing};
 use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, FnArg};
@@ -142,9 +143,32 @@ mod kw {
 /// ### Usage
 ///
 /// Must be used with a module. Inside the module, type aliases must be defined for any custom scalars in the schema.
+///
+/// #### Queries
+///
 /// To use a query, define a module within the aforementioned module, and annotate it with
 /// `#[query("path/to/query.graphql")]`, where the argument is a string literal path to the query document, or the
 /// query contents enclosed in square brackets.
+///
+/// ##### Custom scalar overrides
+///
+/// To override the type of a custom scalar for a path within a query, use the `custom_scalar_overrides` named argument
+/// inside of the `#[query(...)]` attribute. The argument is a map from a path to a type, where the path is a string literal
+/// path to the field in the query, and the type is the type to override the field with.
+///
+/// For example, with the following query:
+/// ```graphql
+/// query MyQuery {
+///     myField: myScalar!
+/// }
+/// ```
+/// do something like the following:
+/// ```ignore
+/// #[query("path/to/query.graphql", custom_scalar_overrides = {
+///     "MyQuery.myField" => ::std::primitive::i32,
+/// })]
+/// ```
+/// Any type path that does not start with `::` is assumed to be relative to the schema definition module.
 ///
 /// ### Naming
 ///
@@ -580,5 +604,93 @@ impl ShopifyFunctionCodeGenerator {
                 parse_quote! { ::std::option::Option::as_ref(#inner_reference) }
             }
         }
+    }
+}
+
+#[proc_macro_derive(Deserialize, attributes(shopify_function))]
+pub fn derive_deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = syn::parse_macro_input!(input as syn::DeriveInput);
+
+    derive_deserialize_for_derive_input(&input)
+        .map(|impl_item| impl_item.to_token_stream().into())
+        .unwrap_or_else(|error| error.to_compile_error().into())
+}
+
+fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<syn::ItemImpl> {
+    match &input.data {
+        syn::Data::Struct(data) => match &data.fields {
+            syn::Fields::Named(fields) => {
+                let name_ident = &input.ident;
+
+                let mut rename_all: Option<syn::LitStr> = None;
+
+                for attr in input.attrs.iter() {
+                    if attr.path().is_ident("shopify_function") {
+                        attr.parse_nested_meta(|meta| {
+                            if meta.path.is_ident("rename_all") {
+                                rename_all = Some(meta.value()?.parse()?);
+                                Ok(())
+                            } else {
+                                Err(meta.error("unrecognized repr"))
+                            }
+                        })?;
+                    }
+                }
+
+                let case_style = match rename_all {
+                    Some(rename_all) => match rename_all.value().as_str() {
+                        "camelCase" => Some(Case::Camel),
+                        "snake_case" => Some(Case::Snake),
+                        "kebab-case" => Some(Case::Kebab),
+                        _ => {
+                            return Err(syn::Error::new_spanned(
+                                rename_all,
+                                "unrecognized rename_all",
+                            ))
+                        }
+                    },
+                    None => None,
+                };
+
+                let field_values: Vec<syn::FieldValue> = fields
+                    .named
+                    .iter()
+                    .map(|field| {
+                        let field_name_ident = field.ident.as_ref().expect("Named fields must have identifiers");
+                        let field_name_str = case_style.map_or_else(|| field_name_ident.to_string(), |case_style| {
+                            field_name_ident.to_string().to_case(case_style)
+                        });
+                        let field_name_lit_str = syn::LitStr::new(field_name_str.as_str(), Span::mixed_site());
+                        parse_quote! {
+                            #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))?
+                        }
+                    })
+                    .collect();
+
+                let deserialize_impl = parse_quote! {
+                    impl shopify_function::wasm_api::Deserialize for #name_ident {
+                        fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                            Ok(Self {
+                                #(#field_values),*
+                            })
+                        }
+                    }
+                };
+
+                Ok(deserialize_impl)
+            }
+            syn::Fields::Unnamed(_) | syn::Fields::Unit => Err(syn::Error::new_spanned(
+                input,
+                "Structs must have named fields to derive `Deserialize`",
+            )),
+        },
+        syn::Data::Enum(_) => Err(syn::Error::new_spanned(
+            input,
+            "Enum types are not supported for deriving `Deserialize`",
+        )),
+        syn::Data::Union(_) => Err(syn::Error::new_spanned(
+            input,
+            "Union types are not supported for deriving `Deserialize`",
+        )),
     }
 }

@@ -22,7 +22,7 @@ pub mod scalars;
 
 pub mod prelude {
     pub use crate::scalars::*;
-    pub use shopify_function_macro::{shopify_function, typegen};
+    pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 }
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

@@ -1,6 +1,10 @@
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
+#[derive(Deserialize)]
+#[shopify_function(rename_all = "camelCase")]
+struct Configuration {}
+
 #[typegen("./schema.graphql", enums_as_str = ["CountryCode"])]
 mod schema {
     #[query("./a.graphql")]
