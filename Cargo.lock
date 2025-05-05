@@ -80,19 +80,9 @@ checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 
 [[package]]
 name = "bluejay-core"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
-dependencies = [
- "enum-as-inner",
- "itertools",
- "serde_json",
- "strum",
-]
-
-[[package]]
-name = "bluejay-core"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0#8186f320ed902d7f4fd5fd93783ec633cbfdfae0"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07afe9ba762beafa49ab71ac7c618b30990a2c92baa1721bfb8e2a8f9a3558ed"
 dependencies = [
  "enum-as-inner",
  "itertools",
@@ -102,47 +92,27 @@ dependencies = [
 
 [[package]]
 name = "bluejay-parser"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e0da789f22068fb4ae1afb52f2ab41bc4fcb8b90776221c9d84715a317d0a77"
 dependencies = [
  "ariadne",
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
+ "bluejay-core",
  "enum-as-inner",
  "itertools",
  "logos",
  "strum",
-]
-
-[[package]]
-name = "bluejay-parser"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0#8186f320ed902d7f4fd5fd93783ec633cbfdfae0"
-dependencies = [
- "ariadne",
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
- "enum-as-inner",
- "itertools",
- "logos",
- "strum",
-]
-
-[[package]]
-name = "bluejay-typegen"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
-dependencies = [
- "bluejay-typegen-macro",
- "serde",
 ]
 
 [[package]]
 name = "bluejay-typegen-codegen"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2d47bc9814b45c95d489bd9add70d89584d5c79eb5f12a21248da7cadb02395"
 dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
- "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
- "bluejay-validator 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
+ "bluejay-core",
+ "bluejay-parser",
+ "bluejay-validator",
  "convert_case",
  "itertools",
  "proc-macro2",
@@ -151,50 +121,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "bluejay-typegen-codegen"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0#8186f320ed902d7f4fd5fd93783ec633cbfdfae0"
-dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
- "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
- "bluejay-validator 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
- "convert_case",
- "itertools",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "bluejay-typegen-macro"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
-dependencies = [
- "bluejay-typegen-codegen 0.2.0",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "bluejay-validator"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665#0b04d8af24ab384f3e5698146be24d1725436665"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd11b3e709609e56ba1c4833fba041be2a47dd94569775b0bb7250ffe56f3538"
 dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
- "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=0b04d8af24ab384f3e5698146be24d1725436665)",
- "itertools",
- "paste",
- "seq-macro",
- "serde_json",
-]
-
-[[package]]
-name = "bluejay-validator"
-version = "0.2.0"
-source = "git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0#8186f320ed902d7f4fd5fd93783ec633cbfdfae0"
-dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
- "bluejay-parser 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
+ "bluejay-core",
+ "bluejay-parser",
  "itertools",
  "paste",
  "seq-macro",
@@ -326,7 +259,6 @@ dependencies = [
 name = "example_with_targets"
 version = "1.0.0"
 dependencies = [
- "bluejay-typegen",
  "serde",
  "serde_json",
  "shopify_function",
@@ -1301,8 +1233,8 @@ dependencies = [
 name = "shopify_function_macro"
 version = "0.8.1"
 dependencies = [
- "bluejay-core 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
- "bluejay-typegen-codegen 0.2.0 (git+https://github.com/Shopify/bluejay?rev=8186f320ed902d7f4fd5fd93783ec633cbfdfae0)",
+ "bluejay-core",
+ "bluejay-typegen-codegen",
  "convert_case",
  "proc-macro2",
  "quote",

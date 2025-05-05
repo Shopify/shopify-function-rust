@@ -8,4 +8,3 @@ license = "MIT"
 shopify_function = { path = "../shopify_function" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0"
-bluejay-typegen = { git = "https://github.com/Shopify/bluejay", rev = "0b04d8af24ab384f3e5698146be24d1725436665" }
