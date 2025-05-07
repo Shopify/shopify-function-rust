@@ -41,9 +41,6 @@ where
     f(input)
 }
 
-pub use serde;
-pub use serde_json;
-
 pub use shopify_function_wasm_api as wasm_api;
 
 #[cfg(test)]

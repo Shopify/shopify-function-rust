@@ -1223,7 +1223,6 @@ name = "shopify_function"
 version = "0.8.1"
 dependencies = [
  "ryu",
- "serde",
  "serde_json",
  "shopify_function_macro",
  "shopify_function_wasm_api",
