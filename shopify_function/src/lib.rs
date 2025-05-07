@@ -8,10 +8,14 @@
 //! ```ignore
 //! use shopify_function::prelude::*
 //!
-//! generate_types!(query_path = "./input.graphql", schema_path = "./schema.graphql");
+//! #[typegen("./schema.graphql")]
+//! mod schema {
+//!     #[query("./input.graphql")]
+//!     pub mod input {}
+//! }
 //!
 //! #[shopify_function]
-//! fn function(input: input::ResponseData) -> Result<output::FunctionResult> {
+//! fn run(input: schema::input::Input) -> Result<schema::FunctionRunResult> {
 //!     /* ... */
 //! }
 //! ```
