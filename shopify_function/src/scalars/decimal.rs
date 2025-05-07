@@ -76,7 +76,7 @@ impl crate::wasm_api::Serialize for Decimal {
 #[cfg(test)]
 mod tests {
     use super::Decimal;
-    use crate::wasm_api::{Context, Deserialize};
+    use crate::wasm_api::{Context, Deserialize, Serialize};
 
     #[test]
     fn test_deserialization() {
@@ -96,12 +96,14 @@ mod tests {
         assert_eq!("Invalid type", error.to_string());
     }
 
-    // #[test]
-    // fn test_serialization() {
-    //     let decimal = Decimal(123.4);
-    //     let json_value = serde_json::to_value(decimal).expect("Error serializing to JSON");
-    //     assert_eq!(serde_json::json!("123.4"), json_value);
-    // }
+    #[test]
+    fn test_serialization() {
+        let decimal = Decimal(123.4);
+        let mut context = Context::new_with_input(serde_json::json!({}));
+        decimal.serialize(&mut context).unwrap();
+        let output = context.finalize_output_and_return().unwrap();
+        assert_eq!(serde_json::json!("123.4"), output);
+    }
 
     #[test]
     fn test_display_formatting() {

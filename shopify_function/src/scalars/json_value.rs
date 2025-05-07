@@ -123,4 +123,47 @@ mod tests {
             ]))
         );
     }
+
+    #[test]
+    fn test_serialize() {
+        let kitchen_sink_value = JsonValue::Object(BTreeMap::from([
+            ("null".to_string(), JsonValue::Null),
+            (
+                "string".to_string(),
+                JsonValue::String("string".to_string()),
+            ),
+            ("number".to_string(), JsonValue::Number(123.0)),
+            ("boolean".to_string(), JsonValue::Boolean(true)),
+            (
+                "object".to_string(),
+                JsonValue::Object(BTreeMap::from([(
+                    "key".to_string(),
+                    JsonValue::String("value".to_string()),
+                )])),
+            ),
+            (
+                "array".to_string(),
+                JsonValue::Array(vec![
+                    JsonValue::Number(1.0),
+                    JsonValue::Number(2.0),
+                    JsonValue::Number(3.0),
+                ]),
+            ),
+        ]));
+
+        let mut context = Context::new_with_input(serde_json::json!({}));
+        kitchen_sink_value.serialize(&mut context).unwrap();
+        let output = context.finalize_output_and_return().unwrap();
+        let expected = serde_json::json!({
+            "null": null,
+            "string": "string",
+            "number": 123.0,
+            "boolean": true,
+            "object": {
+                "key": "value"
+            },
+            "array": [1.0, 2.0, 3.0]
+        });
+        assert_eq!(output, expected);
+    }
 }
