@@ -1244,7 +1244,7 @@ dependencies = [
 [[package]]
 name = "shopify_function_wasm_api"
 version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=cb29cffe1bcf36e4a020e4682e7147c2cca70e58#cb29cffe1bcf36e4a020e4682e7147c2cca70e58"
+source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=ff69d90b4609f55356357c16603d4136f01b9120#ff69d90b4609f55356357c16603d4136f01b9120"
 dependencies = [
  "rmp-serde",
  "serde_json",
@@ -1256,15 +1256,15 @@ dependencies = [
 [[package]]
 name = "shopify_function_wasm_api_core"
 version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=cb29cffe1bcf36e4a020e4682e7147c2cca70e58#cb29cffe1bcf36e4a020e4682e7147c2cca70e58"
+source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=ff69d90b4609f55356357c16603d4136f01b9120#ff69d90b4609f55356357c16603d4136f01b9120"
 dependencies = [
  "strum",
 ]
 
 [[package]]
 name = "shopify_function_wasm_api_provider"
-version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=cb29cffe1bcf36e4a020e4682e7147c2cca70e58#cb29cffe1bcf36e4a020e4682e7147c2cca70e58"
+version = "1.0.0"
+source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=ff69d90b4609f55356357c16603d4136f01b9120#ff69d90b4609f55356357c16603d4136f01b9120"
 dependencies = [
  "bumpalo",
  "rmp",

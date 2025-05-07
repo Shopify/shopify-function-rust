@@ -7,7 +7,7 @@ use std::{
 };
 
 const FUNCTION_RUNNER_VERSION: &str = "8.0.0";
-const TRAMPOLINE_VERSION: &str = "0.0.1";
+const TRAMPOLINE_VERSION: &str = "1.0.0";
 
 fn workspace_root() -> std::path::PathBuf {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
@@ -47,15 +47,42 @@ static TRAMPOLINE_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|| {
     let path = workspace_root().join(format!("tmp/trampoline-{}", TRAMPOLINE_VERSION));
     if !path.exists() {
         std::fs::create_dir_all(workspace_root().join("tmp"))?;
-        todo!("download trampoline");
+        download_trampoline(&path)?;
     }
     Ok(path)
 });
 
 fn download_function_runner(destination: &PathBuf) -> Result<()> {
-    // Download the function runner from the internet
-    // URL looks like this: https://github.com/Shopify/function-runner/releases/download/v7.0.1/function-runner-arm-linux-v7.0.1.gz
-    // but we need to download the correct version for the current platform
+    download_from_github(
+        |target_arch, target_os| {
+            format!(
+                "https://github.com/Shopify/function-runner/releases/download/v{}/function-runner-{}-{}-v{}.gz",
+                FUNCTION_RUNNER_VERSION, target_arch, target_os, FUNCTION_RUNNER_VERSION,
+            )
+        },
+        destination,
+    )
+}
+
+fn download_trampoline(destination: &PathBuf) -> Result<()> {
+    download_from_github(
+        |target_arch, target_os| {
+            format!(
+            "https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v{}/shopify-function-trampoline-{}-{}-v{}.gz",
+            TRAMPOLINE_VERSION, target_arch, target_os, TRAMPOLINE_VERSION,
+        )
+        },
+        destination,
+    )
+}
+
+/// Downloads a file from github and saves it to the given destination
+///
+/// The url_builder is a function that takes the target_arch and target_os and returns the url
+fn download_from_github(
+    url_builder: impl Fn(&str, &str) -> String,
+    destination: &PathBuf,
+) -> Result<()> {
     let target_os = if cfg!(target_os = "macos") {
         "macos"
     } else if cfg!(target_os = "linux") {
@@ -74,14 +101,11 @@ fn download_function_runner(destination: &PathBuf) -> Result<()> {
         anyhow::bail!("Unsupported target architecture");
     };
 
-    let url = format!(
-        "https://github.com/Shopify/function-runner/releases/download/v{}/function-runner-{}-{}-v{}.gz",
-        FUNCTION_RUNNER_VERSION, target_arch, target_os, FUNCTION_RUNNER_VERSION,
-    );
+    let url = url_builder(target_arch, target_os);
 
     let response = reqwest::blocking::get(&url)?;
     if !response.status().is_success() {
-        anyhow::bail!("Failed to download function runner: {}", response.status());
+        anyhow::bail!("Failed to download artifact: {}", response.status());
     }
     let bytes = response.bytes()?;
     let mut gz_decoder = flate2::read::GzDecoder::new(bytes.as_ref());
