@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    reviewers:
+      - "@Shopify/functions-dependabot-reviewers"
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
