@@ -16,7 +16,7 @@
 //! }
 //! ```
 
-pub use shopify_function_macro::shopify_function;
+pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 
 pub mod scalars;
 
