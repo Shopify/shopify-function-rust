@@ -68,6 +68,7 @@ type Input {
   dateTimeWithoutTimezone: DateTimeWithoutTimezone
   timeWithoutTimezone: TimeWithoutTimezone
   targetAResult: Int @restrictTarget(only: ["test.target-b"])
+  country: CountryCode
 }
 
 """
@@ -107,4 +108,12 @@ The result of API target B.
 """
 input FunctionTargetBResult {
   name: String
+}
+
+"""
+The country code for the function.
+"""
+enum CountryCode {
+  AC
+  CA
 }
