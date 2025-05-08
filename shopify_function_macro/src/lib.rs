@@ -343,10 +343,8 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
 
                 parse_quote! {
                     pub fn #field_name_ident(&self) -> #field_type {
-                        static INTERNED_FIELD_NAME: ::std::sync::OnceLock<shopify_function::wasm_api::InternedStringId> = ::std::sync::OnceLock::new();
-                        let interned_string_id = *INTERNED_FIELD_NAME.get_or_init(|| {
-                            self.__wasm_value.intern_utf8_str(#field_name_lit_str)
-                        });
+                        static INTERNED_FIELD_NAME: shopify_function::wasm_api::CachedInternedStringId = shopify_function::wasm_api::CachedInternedStringId::new(#field_name_lit_str, );
+                        let interned_string_id = INTERNED_FIELD_NAME.load_from_value(&self.__wasm_value);
 
                         let value = self.#field_name_ident.get_or_init(|| {
                             let value = self.__wasm_value.get_interned_obj_prop(interned_string_id);
