@@ -207,8 +207,10 @@ pub fn run_example(
         );
     }
 
-    let output_json = output
+    let output_json_str = output
         .get("output")
+        .and_then(|o| o.get("humanized").and_then(|h| h.as_str()))
         .ok_or_else(|| anyhow::anyhow!("No output"))?;
-    Ok(output_json.clone())
+    let output_json: serde_json::Value = serde_json::from_str(output_json_str)?;
+    Ok(output_json)
 }
