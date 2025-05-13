@@ -341,7 +341,13 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 let properly_referenced_value =
                     Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
 
+                let description: Option<syn::Attribute> = field.description().map(|description| {
+                    let description_lit_str = syn::LitStr::new(description, Span::mixed_site());
+                    parse_quote! { #[doc = #description_lit_str] }
+                });
+
                 parse_quote! {
+                    #description
                     pub fn #field_name_ident(&self) -> #field_type {
                         static INTERNED_FIELD_NAME: shopify_function::wasm_api::CachedInternedStringId = shopify_function::wasm_api::CachedInternedStringId::new(#field_name_lit_str, );
                         let interned_string_id = INTERNED_FIELD_NAME.load_from_value(&self.__wasm_value);
@@ -427,7 +433,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             }
         };
 
-        let deserialize_match_arms: Vec<syn::Arm> = enum_type_definition
+        let from_str_match_arms: Vec<syn::Arm> = enum_type_definition
             .enum_value_definitions()
             .iter()
             .map(|evd| {
@@ -435,25 +441,33 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 let variant_name_lit_str = syn::LitStr::new(evd.name(), Span::mixed_site());
 
                 parse_quote! {
-                    #variant_name_lit_str => Ok(Self::#variant_name_ident),
+                    #variant_name_lit_str => Self::#variant_name_ident,
                 }
             })
             .collect();
+
+        let impl_with_from_str_method = parse_quote! {
+            impl #name_ident {
+                pub fn from_str(s: &str) -> Self {
+                    match s {
+                        #(#from_str_match_arms)*
+                        _ => Self::Other,
+                    }
+                }
+            }
+        };
 
         let deserialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Deserialize for #name_ident {
                 fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
                     let str_value: String = shopify_function::wasm_api::Deserialize::deserialize(value)?;
 
-                    match str_value.as_str() {
-                        #(#deserialize_match_arms)*
-                        _ => Ok(Self::Other),
-                    }
+                    Ok(Self::from_str(&str_value))
                 }
             }
         };
 
-        vec![serialize_impl, deserialize_impl]
+        vec![serialize_impl, deserialize_impl, impl_with_from_str_method]
     }
 
     fn additional_impls_for_input_object(
