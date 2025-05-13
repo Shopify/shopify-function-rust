@@ -80,9 +80,9 @@ checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 
 [[package]]
 name = "bluejay-core"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07afe9ba762beafa49ab71ac7c618b30990a2c92baa1721bfb8e2a8f9a3558ed"
+checksum = "5860a442543063d03e6f76795c268ea5679e91fac3500f10dba2feeb85cf1818"
 dependencies = [
  "enum-as-inner",
  "itertools",
@@ -92,9 +92,9 @@ dependencies = [
 
 [[package]]
 name = "bluejay-parser"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e0da789f22068fb4ae1afb52f2ab41bc4fcb8b90776221c9d84715a317d0a77"
+checksum = "7e525e5fad12f700f107135151cb957f9e1ff8044cb52ba7562b76e6be2d34e5"
 dependencies = [
  "ariadne",
  "bluejay-core",
@@ -106,9 +106,9 @@ dependencies = [
 
 [[package]]
 name = "bluejay-typegen-codegen"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2d47bc9814b45c95d489bd9add70d89584d5c79eb5f12a21248da7cadb02395"
+checksum = "02e8869859a2a7381c11caf6441b83813082c36275e7daf183c94b4a0ecdc30d"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
@@ -122,9 +122,9 @@ dependencies = [
 
 [[package]]
 name = "bluejay-validator"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd11b3e709609e56ba1c4833fba041be2a47dd94569775b0bb7250ffe56f3538"
+checksum = "cde85073f8756b2fa6bf18b52eef7d3b42414bd087bb75eb5ea0e4d9a2d10d95"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
