@@ -100,11 +100,11 @@ pub fn shopify_function(
         #[export_name = #function_name_string]
         pub extern "C" fn #export_function_name() {
             let mut context = shopify_function::wasm_api::Context::new();
-            let root_value = context.input_get().unwrap();
-            let mut input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).unwrap();
-            let result = #function_name(input).unwrap();
-            shopify_function::wasm_api::Serialize::serialize(&result, &mut context).unwrap();
-            context.finalize_output().unwrap();
+            let root_value = context.input_get().expect("Failed to get input");
+            let mut input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).expect("Failed to deserialize input");
+            let result = #function_name(input).expect("Failed to call function");
+            shopify_function::wasm_api::Serialize::serialize(&result, &mut context).expect("Failed to serialize output");
+            context.finalize_output().expect("Failed to finalize output");
         }
 
         #ast

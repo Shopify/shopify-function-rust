@@ -26,7 +26,7 @@ See the [example_with_targets] for details on usage, or use the following guide 
       ```rust
       #[typegen("./schema.graphql")]
       pub mod schema {
-         #[query("./input.graphlq")]
+         #[query("./input.graphql")]
          pub mod input {}
       }
       ```

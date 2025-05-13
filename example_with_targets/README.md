@@ -9,10 +9,6 @@ Target | Handle (`snake_case`) | GraphQL mutation
 `example.target-a` | `target_a` | `targetA(result: FunctionTargetAResult!)`
 `example.target-b` | `target_b` | `targetB(result: FunctionTargetBResult!)`
 
-### `schema.graphql`
-
-See the contents of `schema.graphql`
-
 ## `shopify.function.extension.toml`
 
 ```toml
@@ -32,12 +28,8 @@ export = "function_b"
 - `export` (optional): The name of the Wasm function export to run.
   - default: The target handle as `snake_case`.
 
-## `shopify_function` usage
+## Generated code
 
-See `src/main.rs`.
-
-### Generated code
-
-The `typegen` macro modifies a module to add all types for the schema, as well as any queries added within the module. See the the top-level `README.md` for details.
+The `typegen` macro modifies a module to add all types for the schema, as well as any queries added within the module. See the `shopify_function` crate documentation for more details.
 
 [crate]: https://crates.io/crates/shopify-function
