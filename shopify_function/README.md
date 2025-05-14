@@ -41,7 +41,7 @@ See the [example_with_targets] for details on usage, or use the following guide 
       }
       ```
 
-   1. Ensure that you have a `main` function that returns an error indicating to invoke a named export:
+   1. In `main.rs`, ensure that you have a `main` function that returns an error indicating to invoke a named export:
 
       ```rust
       fn main() {
@@ -50,7 +50,7 @@ See the [example_with_targets] for details on usage, or use the following guide 
       }
       ```
 
-   1. Replace any references to `#[shopify_function_target]` with the `shopify_function` macro, and change its return type. Typically, this is located in a file with a name equal to the target, e.g. `run.rs`.
+   1. Throughout all of your source files, replace any references to `#[shopify_function_target]` with the `shopify_function` macro, and change its return type. Typically, this is located in a file with a name equal to the target, e.g. `run.rs`.
 
       ```rust
       #[shopify_function]
