@@ -5,29 +5,39 @@ A crate to help developers build [Shopify Functions].
 ## Usage
 
 - The [`typegen`] macro allows you to generate structs based on your Function API (based on the provided GraphQL schema) and multiple [input queries][input query].
-- The [`shopify_function`] attribute macro marks the following function as the entry point for a Shopify Function. It manages the Functions input parsing and `STDOUT` output serialization for you.
+- The [`shopify_function`] attribute macro marks the following function as the entry point for a Shopify Function. It manages the Functions input parsing and output serialization for you.
 - The [`run_function_with_input`] function is a utility for unit testing which allows you to quickly add new tests based on a given JSON input string.
 
 See the [example_with_targets] for details on usage, or use the following guide to convert an existing Rust-based function.
 
 ## Updating an existing function using a version of `shopify_function` below `0.9.0` to use version `0.9.0` and above
 
-1. In `main.rs`:
-
-   1. Add imports for `shopify_function`.
+   1. In `main.rs`, add imports for `shopify_function`.
 
       ```rust
       use shopify_function::prelude::*;
       use shopify_function::Result;
       ```
 
-   1. Add type generation, right under your imports. Remove any references to the `generate_types!` macro.
+   1. In `main.rs`, add type generation, right under your imports. Remove any references to the `generate_types!` macro. Replace `./input.graphql` with the location of your input query file (e.g. `src/run.graphql`).
 
       ```rust
       #[typegen("./schema.graphql")]
       pub mod schema {
          #[query("./input.graphql")]
          pub mod input {}
+      }
+      ```
+
+      If your Function has multiple targets each with their own input query, add a nested module for each. For example:
+      ```rust
+      #[typegen("./schema.graphql")]
+      pub mod schema {
+         #[query("src/target_a.graphql")]
+         pub mod target_a {}
+
+         #[query("src/target_b.graphql")]
+         pub mod target_b {}
       }
       ```
 
@@ -40,7 +50,7 @@ See the [example_with_targets] for details on usage, or use the following guide 
       }
       ```
 
-   1. Attribute the `run` function (or whatever the name of your target is) with the `shopify_function` macro, and change its return type.
+   1. Replace any references to `#[shopify_function_target]` with the `shopify_function` macro, and change its return type. Typically, this is located in a file with a name equal to the target, e.g. `run.rs`.
 
       ```rust
       #[shopify_function]
