@@ -410,29 +410,6 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
     ) -> Vec<syn::ItemImpl> {
         let name_ident = names::type_ident(enum_type_definition.name());
 
-        let serialize_match_arms: Vec<syn::Arm> = enum_type_definition
-            .enum_value_definitions()
-            .iter()
-            .map(|evd| {
-                let variant_name_ident = names::enum_variant_ident(evd.name());
-                let variant_name_lit_str = syn::LitStr::new(evd.name(), Span::mixed_site());
-                parse_quote! {
-                    Self::#variant_name_ident => context.write_utf8_str(#variant_name_lit_str),
-                }
-            })
-            .collect();
-
-        let serialize_impl = parse_quote! {
-            impl shopify_function::wasm_api::Serialize for #name_ident {
-                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
-                    match self {
-                        #(#serialize_match_arms)*
-                        Self::Other => panic!("Cannot serialize `Other` variant"),
-                    }
-                }
-            }
-        };
-
         let from_str_match_arms: Vec<syn::Arm> = enum_type_definition
             .enum_value_definitions()
             .iter()
@@ -446,13 +423,42 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             })
             .collect();
 
-        let impl_with_from_str_method = parse_quote! {
+        let as_str_match_arms: Vec<syn::Arm> = enum_type_definition
+            .enum_value_definitions()
+            .iter()
+            .map(|evd| {
+                let variant_name_ident = names::enum_variant_ident(evd.name());
+                let variant_name_lit_str = syn::LitStr::new(evd.name(), Span::mixed_site());
+
+                parse_quote! {
+                    Self::#variant_name_ident => #variant_name_lit_str,
+                }
+            })
+            .collect();
+
+        let non_trait_method_impls = parse_quote! {
             impl #name_ident {
                 pub fn from_str(s: &str) -> Self {
                     match s {
                         #(#from_str_match_arms)*
                         _ => Self::Other,
                     }
+                }
+
+                fn as_str(&self) -> &str {
+                    match self {
+                        #(#as_str_match_arms)*
+                        Self::Other => panic!("Cannot serialize `Other` variant"),
+                    }
+                }
+            }
+        };
+
+        let serialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Serialize for #name_ident {
+                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    let str_value = self.as_str();
+                    context.write_utf8_str(str_value)
                 }
             }
         };
@@ -467,7 +473,20 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             }
         };
 
-        vec![serialize_impl, deserialize_impl, impl_with_from_str_method]
+        let display_impl = parse_quote! {
+            impl std::fmt::Display for #name_ident {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    write!(f, "{}", self.as_str())
+                }
+            }
+        };
+
+        vec![
+            non_trait_method_impls,
+            serialize_impl,
+            deserialize_impl,
+            display_impl,
+        ]
     }
 
     fn additional_impls_for_input_object(
