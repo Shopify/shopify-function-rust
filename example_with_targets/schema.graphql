@@ -9,6 +9,11 @@ Only allow the field to be queried when targeting one of the specified targets.
 directive @restrictTarget(only: [String!]!) on FIELD_DEFINITION
 
 """
+Requires that exactly one field must be supplied and that field must not be `null`.
+"""
+directive @oneOf on INPUT_OBJECT
+
+"""
 Represents an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-encoded date string.
 For example, September 7, 2019 is represented as `"2019-07-16"`.
 """
@@ -108,6 +113,20 @@ The result of API target B.
 """
 input FunctionTargetBResult {
   name: String
+  operations: [Operation!]!
+}
+
+input Operation @oneOf {
+  doThis: This
+  doThat: That
+}
+
+input This {
+  thisField: String!
+}
+
+input That {
+  thatField: Int!
 }
 
 """

@@ -23,6 +23,12 @@ fn target_a(_input: schema::target_a::Input) -> Result<schema::FunctionTargetARe
 fn target_b(input: schema::target_b::Input) -> Result<schema::FunctionTargetBResult> {
     Ok(schema::FunctionTargetBResult {
         name: Some(format!("new name: \"{}\"", input.id())),
+        operations: vec![
+            schema::Operation::DoThis(schema::This {
+                this_field: "this field".to_string(),
+            }),
+            schema::Operation::DoThat(schema::That { that_field: 42 }),
+        ],
     })
 }
 
