@@ -529,7 +529,27 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             }
         };
 
-        vec![serialize_impl]
+        let field_values: Vec<syn::FieldValue> = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|ivd| {
+                let field_name_ident = names::field_ident(ivd.name());
+                let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
+                parse_quote! { #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))? }
+            })
+            .collect();
+
+        let deserialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    Ok(Self {
+                        #(#field_values),*
+                    })
+                }
+            }
+        };
+
+        vec![serialize_impl, deserialize_impl]
     }
 
     fn additional_impls_for_one_of_input_object(
@@ -567,7 +587,47 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             }
         };
 
-        vec![serialize_impl]
+        let deserialize_match_arms: Vec<syn::Arm> = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|ivd| {
+                let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
+                let variant_ident = names::enum_variant_ident(ivd.name());
+
+                parse_quote! {
+                    #field_name_lit_str => {
+                        let value = shopify_function::wasm_api::Deserialize::deserialize(&field_value)?;
+                        Ok(Self::#variant_ident(value))
+                    }
+                }
+            })
+            .collect();
+
+        let deserialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    let Some(obj_len) = value.obj_len() else {
+                        return Err(shopify_function::wasm_api::read::Error::InvalidType);
+                    };
+
+                    if obj_len != 1 {
+                        return Err(shopify_function::wasm_api::read::Error::InvalidType);
+                    }
+
+                    let Some(field_name) = value.get_obj_key_at_index(0) else {
+                        return Err(shopify_function::wasm_api::read::Error::InvalidType);
+                    };
+                    let field_value = value.get_at_index(0);
+
+                    match field_name.as_str() {
+                        #(#deserialize_match_arms)*
+                        _ => Err(shopify_function::wasm_api::read::Error::InvalidType),
+                    }
+                }
+            }
+        };
+
+        vec![serialize_impl, deserialize_impl]
     }
 
     fn attributes_for_enum(

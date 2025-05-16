@@ -39,7 +39,19 @@ fn test_example_with_targets_target_b() -> Result<()> {
     assert_eq!(
         output,
         serde_json::json!({
-            "name": "new name: \"gid://shopify/Order/1234567890\""
+            "name": "new name: \"gid://shopify/Order/1234567890\"",
+            "operations": [
+                {
+                    "doThis": {
+                        "thisField": "this field"
+                    }
+                },
+                {
+                    "doThat": {
+                        "thatField": 42
+                    }
+                }
+            ]
         })
     );
     Ok(())
