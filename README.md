@@ -6,4 +6,4 @@ For documentation, please take a look at the [crate's docs.rs page][docs]. To se
 
 [crate]: https://crates.io/crates/shopify-function
 [docs]: https://docs.rs/shopify_function
-[example]: https://github.com/Shopify/shopify-function-rust/tree/main/example
+[example]: https://github.com/Shopify/shopify-function-rust/tree/main/example_with_targets

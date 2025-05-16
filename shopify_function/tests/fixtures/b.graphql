@@ -1,4 +1,0 @@
-query Input {
-  id
-  targetAResult
-}

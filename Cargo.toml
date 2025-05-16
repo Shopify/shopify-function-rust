@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "example",
     "example_with_targets",
     "shopify_function",
     "shopify_function_macro",
+    "integration_tests",
 ]
 
 [profile.release]
