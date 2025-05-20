@@ -1242,8 +1242,9 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_provider"
-version = "1.0.0"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=53b7f99c1cd67fc1f602495c745a9af166413573#53b7f99c1cd67fc1f602495c745a9af166413573"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1eb4e60eb2f8c6e02b1f1e7634ef91738b1104b5bc2fa30458d10cd00917dbbf"
 dependencies = [
  "bumpalo",
  "rmp",
@@ -1252,8 +1253,9 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_wasm_api"
-version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=53b7f99c1cd67fc1f602495c745a9af166413573#53b7f99c1cd67fc1f602495c745a9af166413573"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a57a2e64ef7d28cbe26bf591fd084093327d9d359e38355010720d818cd92ba9"
 dependencies = [
  "rmp-serde",
  "serde_json",
@@ -1264,8 +1266,9 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_wasm_api_core"
-version = "0.0.1"
-source = "git+https://github.com/Shopify/shopify-function-wasm-api?rev=53b7f99c1cd67fc1f602495c745a9af166413573#53b7f99c1cd67fc1f602495c745a9af166413573"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4842376f01b3abe6c78596085f29ea0d1b605873d2855f812738072c38e32c34"
 dependencies = [
  "strum",
 ]
