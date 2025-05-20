@@ -10,66 +10,68 @@ A crate to help developers build [Shopify Functions].
 
 See the [example_with_targets] for details on usage, or use the following guide to convert an existing Rust-based function.
 
-## Updating an existing function using a version of `shopify_function` below `0.9.0` to use version `0.9.0` and above
+## Updating an existing function using a version of `shopify_function` below `1.0.0` to use version `1.0.0` and above
 
-   1. In `main.rs`, add imports for `shopify_function`.
+1.  In `main.rs`, add imports for `shopify_function`.
 
-      ```rust
-      use shopify_function::prelude::*;
-      use shopify_function::Result;
-      ```
+    ```rust
+    use shopify_function::prelude::*;
+    use shopify_function::Result;
+    ```
 
-   1. In `main.rs`, add type generation, right under your imports. Remove any references to the `generate_types!` macro. Replace `./input.graphql` with the location of your input query file (e.g. `src/run.graphql`).
+1.  In `main.rs`, add type generation, right under your imports. Remove any references to the `generate_types!` macro. Replace `./input.graphql` with the location of your input query file (e.g. `src/run.graphql`).
 
-      ```rust
-      #[typegen("./schema.graphql")]
-      pub mod schema {
-         #[query("./input.graphql")]
-         pub mod input {}
-      }
-      ```
+    ```rust
+    #[typegen("./schema.graphql")]
+    pub mod schema {
+       #[query("./input.graphql")]
+       pub mod input {}
+    }
+    ```
 
-      If your Function has multiple targets each with their own input query, add a nested module for each. For example:
-      ```rust
-      #[typegen("./schema.graphql")]
-      pub mod schema {
-         #[query("src/target_a.graphql")]
-         pub mod target_a {}
+    If your Function has multiple targets each with their own input query, add a nested module for each. For example:
 
-         #[query("src/target_b.graphql")]
-         pub mod target_b {}
-      }
-      ```
+    ```rust
+    #[typegen("./schema.graphql")]
+    pub mod schema {
+       #[query("src/target_a.graphql")]
+       pub mod target_a {}
 
-   1. In `main.rs`, ensure that you have a `main` function that returns an error indicating to invoke a named export:
+       #[query("src/target_b.graphql")]
+       pub mod target_b {}
+    }
+    ```
 
-      ```rust
-      fn main() {
-         eprintln!("Invoke a named import");
-         std::process::exit(1);
-      }
-      ```
+1.  In `main.rs`, ensure that you have a `main` function that returns an error indicating to invoke a named export:
 
-   1. Throughout all of your source files, replace any references to `#[shopify_function_target]` with the `shopify_function` macro, and change its return type. Typically, this is located in a file with a name equal to the target, e.g. `run.rs`.
+    ```rust
+    fn main() {
+       eprintln!("Invoke a named import");
+       std::process::exit(1);
+    }
+    ```
 
-      ```rust
-      #[shopify_function]
-      fn run(input: schema::input::Input) -> Result<schema::FunctionRunResult> {
-      ```
+1.  Throughout all of your source files, replace any references to `#[shopify_function_target]` with the `shopify_function` macro, and change its return type. Typically, this is located in a file with a name equal to the target, e.g. `run.rs`.
 
-   1. Update the types and fields utilized in the function to the new, auto-generated structs. For example:
-      | Old | New |
-      | --- | --- |
-      | `input::ResponseData` | `schema::input::Input` |
-      | `input::InputDiscountNodeMetafield` | `schema::input::input::discount_node::Metafield` |
-      | `input::InputDiscountNode` | `schema::input::input::DiscountNode` |
-      | `output::FunctionRunResult` | `schema::FunctionRunResult` |
-      | `output::DiscountApplicationStrategy::FIRST` | `schema::DiscountApplicationStrategy::First` |
+    ```rust
+    #[shopify_function]
+    fn run(input: schema::input::Input) -> Result<schema::FunctionRunResult> {
+    ```
 
-      If referencing generated types from a file other than `main.rs` where they are defined, you'll need to import the schema. For example in `run.rs` you would need to add:
-      ```rust
-      use crate::schema;
-      ```
+1.  Update the types and fields utilized in the function to the new, auto-generated structs. For example:
+    | Old | New |
+    | --- | --- |
+    | `input::ResponseData` | `schema::input::Input` |
+    | `input::InputDiscountNodeMetafield` | `schema::input::input::discount_node::Metafield` |
+    | `input::InputDiscountNode` | `schema::input::input::DiscountNode` |
+    | `output::FunctionRunResult` | `schema::FunctionRunResult` |
+    | `output::DiscountApplicationStrategy::FIRST` | `schema::DiscountApplicationStrategy::First` |
+
+    If referencing generated types from a file other than `main.rs` where they are defined, you'll need to import the schema. For example in `run.rs` you would need to add:
+
+    ```rust
+    use crate::schema;
+    ```
 
 ## Viewing the generated types
 
