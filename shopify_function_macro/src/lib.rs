@@ -393,11 +393,11 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             impl shopify_function::wasm_api::Deserialize for #name_ident {
                 fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
                     let typename = value.get_obj_prop("__typename");
-                    let typename_str: String = shopify_function::wasm_api::Deserialize::deserialize(&typename)?;
+                    let typename_str: ::std::string::String = shopify_function::wasm_api::Deserialize::deserialize(&typename)?;
 
                     match typename_str.as_str() {
                         #(#match_arms)*
-                        _ => Ok(Self::Other),
+                        _ => ::std::result::Result::Ok(Self::Other),
                     }
                 }
             }
@@ -445,7 +445,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                     }
                 }
 
-                fn as_str(&self) -> &str {
+                fn as_str(&self) -> &::std::primitive::str {
                     match self {
                         #(#as_str_match_arms)*
                         Self::Other => panic!("Cannot serialize `Other` variant"),
@@ -466,9 +466,9 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         let deserialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Deserialize for #name_ident {
                 fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
-                    let str_value: String = shopify_function::wasm_api::Deserialize::deserialize(value)?;
+                    let str_value: ::std::string::String = shopify_function::wasm_api::Deserialize::deserialize(value)?;
 
-                    Ok(Self::from_str(&str_value))
+                    ::std::result::Result::Ok(Self::from_str(&str_value))
                 }
             }
         };
@@ -521,7 +521,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                     context.write_object(
                         |context| {
                             #(#field_statements)*
-                            Ok(())
+                            ::std::result::Result::Ok(())
                         },
                         #num_fields,
                     )
@@ -542,7 +542,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         let deserialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Deserialize for #name_ident {
                 fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
-                    Ok(Self {
+                    ::std::result::Result::Ok(Self {
                         #(#field_values),*
                     })
                 }
@@ -581,7 +581,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                         match self {
                             #(#match_arms)*
                         }
-                        Ok(())
+                        ::std::result::Result::Ok(())
                     }, 1)
                 }
             }
@@ -597,7 +597,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 parse_quote! {
                     #field_name_lit_str => {
                         let value = shopify_function::wasm_api::Deserialize::deserialize(&field_value)?;
-                        Ok(Self::#variant_ident(value))
+                        ::std::result::Result::Ok(Self::#variant_ident(value))
                     }
                 }
             })
@@ -606,22 +606,22 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         let deserialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Deserialize for #name_ident {
                 fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
-                    let Some(obj_len) = value.obj_len() else {
-                        return Err(shopify_function::wasm_api::read::Error::InvalidType);
+                    let ::std::option::Option::Some(obj_len) = value.obj_len() else {
+                        return ::std::result::Result::Err(shopify_function::wasm_api::read::Error::InvalidType);
                     };
 
                     if obj_len != 1 {
-                        return Err(shopify_function::wasm_api::read::Error::InvalidType);
+                        return ::std::result::Result::Err(shopify_function::wasm_api::read::Error::InvalidType);
                     }
 
-                    let Some(field_name) = value.get_obj_key_at_index(0) else {
-                        return Err(shopify_function::wasm_api::read::Error::InvalidType);
+                    let ::std::option::Option::Some(field_name) = value.get_obj_key_at_index(0) else {
+                        return ::std::result::Result::Err(shopify_function::wasm_api::read::Error::InvalidType);
                     };
                     let field_value = value.get_at_index(0);
 
                     match field_name.as_str() {
                         #(#deserialize_match_arms)*
-                        _ => Err(shopify_function::wasm_api::read::Error::InvalidType),
+                        _ => ::std::result::Result::Err(shopify_function::wasm_api::read::Error::InvalidType),
                     }
                 }
             }
@@ -634,21 +634,27 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         &self,
         _enum_type_definition: &impl EnumTypeDefinition,
     ) -> Vec<syn::Attribute> {
-        vec![parse_quote! { #[derive(Debug, PartialEq, Clone, Copy)] }]
+        vec![
+            parse_quote! { #[derive(::std::fmt::Debug, ::std::cmp::PartialEq, ::std::clone::Clone, ::std::marker::Copy)] },
+        ]
     }
 
     fn attributes_for_input_object(
         &self,
         _input_object_type_definition: &impl InputObjectTypeDefinition,
     ) -> Vec<syn::Attribute> {
-        vec![parse_quote! { #[derive(Debug, PartialEq, Clone)] }]
+        vec![
+            parse_quote! { #[derive(::std::fmt::Debug, ::std::cmp::PartialEq, ::std::clone::Clone)] },
+        ]
     }
 
     fn attributes_for_one_of_input_object(
         &self,
         _input_object_type_definition: &impl InputObjectTypeDefinition,
     ) -> Vec<syn::Attribute> {
-        vec![parse_quote! { #[derive(Debug, PartialEq, Clone)] }]
+        vec![
+            parse_quote! { #[derive(::std::fmt::Debug, ::std::cmp::PartialEq, ::std::clone::Clone)] },
+        ]
     }
 }
 
@@ -761,7 +767,7 @@ fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<
                 let deserialize_impl = parse_quote! {
                     impl shopify_function::wasm_api::Deserialize for #name_ident {
                         fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
-                            Ok(Self {
+                            ::std::result::Result::Ok(Self {
                                 #(#field_values),*
                             })
                         }
