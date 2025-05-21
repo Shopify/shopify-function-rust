@@ -74,6 +74,9 @@ type Input {
   timeWithoutTimezone: TimeWithoutTimezone
   targetAResult: Int @restrictTarget(only: ["test.target-b"])
   country: CountryCode
+  optionalArray: [String!]
+  optionalArrayOfArrays: [[String!]!]
+  optionalArrayOfOptionalArrays: [[String!]]
 }
 
 """
