@@ -339,7 +339,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 let field_type = Self::type_for_field(executable_struct, field.r#type(), true);
 
                 let properly_referenced_value =
-                    Self::reference_variable_for_type(field.r#type(), &format_ident!("value"));
+                    Self::reference_variable_for_type(field.r#type(), &format_ident!("value_ref"));
 
                 let description: Option<syn::Attribute> = field.description().map(|description| {
                     let description_lit_str = syn::LitStr::new(description, Span::mixed_site());
@@ -356,6 +356,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                             let value = self.__wasm_value.get_interned_obj_prop(interned_string_id);
                             shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
                         });
+                        let value_ref = &value;
                         #properly_referenced_value
                     }
                 }
@@ -693,12 +694,16 @@ impl ShopifyFunctionCodeGenerator {
         variable: &syn::Ident,
     ) -> syn::Expr {
         match r#type {
-            WrappedExecutableType::Base(_) | WrappedExecutableType::Vec(_) => {
-                parse_quote! { &#variable }
+            WrappedExecutableType::Base(_) => {
+                parse_quote! { #variable }
+            }
+            WrappedExecutableType::Vec(_) => {
+                parse_quote! { #variable.as_slice()}
             }
             WrappedExecutableType::Optional(inner) => {
-                let inner_reference = Self::reference_variable_for_type(inner, variable);
-                parse_quote! { ::std::option::Option::as_ref(#inner_reference) }
+                let inner_variable = format_ident!("v_inner");
+                let inner_reference = Self::reference_variable_for_type(inner, &inner_variable);
+                parse_quote! { ::std::option::Option::as_ref(#variable).map(|#inner_variable| #inner_reference) }
             }
         }
     }
