@@ -704,6 +704,22 @@ impl ShopifyFunctionCodeGenerator {
     }
 }
 
+/// Derives the `Deserialize` trait for structs to deserialize values from shopify_function_wasm_api::Value.
+///
+/// The derive macro supports the following attributes:
+///
+/// - `#[shopify_function(rename_all = "camelCase")]` - Converts field names from snake_case in Rust
+///   to the specified case style ("camelCase", "snake_case", or "kebab-case") when deserializing.
+///
+/// - `#[shopify_function(default)]` - When applied to a field, uses the `Default` implementation for
+///   that field's type if either:
+///   1. The field's value is explicitly `null` in the JSON
+///   2. The field is missing entirely from the JSON object
+///
+/// This is similar to serde's `#[serde(default)]` attribute, allowing structs to handle missing or null
+/// fields gracefully by using their default values instead of returning an error.
+///
+/// Note: Fields that use `#[shopify_function(default)]` must be a type that implements the `Default` trait.  
 #[proc_macro_derive(Deserialize, attributes(shopify_function))]
 pub fn derive_deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
@@ -758,8 +774,43 @@ fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<
                             field_name_ident.to_string().to_case(case_style)
                         });
                         let field_name_lit_str = syn::LitStr::new(field_name_str.as_str(), Span::mixed_site());
-                        parse_quote! {
-                            #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))?
+
+                        // Check if field has #[shopify_function(default)] attribute
+                        let has_default = field.attrs.iter().any(|attr| {
+                            if attr.path().is_ident("shopify_function") {
+                                let mut found = false;
+                                let _ = attr.parse_nested_meta(|meta| {
+                                    if meta.path.is_ident("default") {
+                                        found = true;
+                                    }
+                                    Ok(())
+                                });
+                                found
+                            } else {
+                                false
+                            }
+                        });
+
+                        if has_default {
+                            // For fields with default attribute, check if value is null or missing
+                            // This will use the Default implementation for the field type when either:
+                            // 1. The field is explicitly null in the JSON (we get NanBox::null())
+                            // 2. The field is missing in the JSON (get_obj_prop returns a null value)
+                            parse_quote! {
+                                #field_name_ident: {
+                                    let prop = value.get_obj_prop(#field_name_lit_str);
+                                    if prop.is_null() {
+                                        ::std::default::Default::default()
+                                    } else {
+                                        shopify_function::wasm_api::Deserialize::deserialize(&prop)?
+                                    }
+                                }
+                            }
+                        } else {
+                            // For fields without default, use normal deserialization
+                            parse_quote! {
+                                #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))?
+                            }
                         }
                     })
                     .collect();
