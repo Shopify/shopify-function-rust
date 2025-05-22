@@ -100,11 +100,26 @@ pub fn shopify_function(
         #[export_name = #function_name_string]
         pub extern "C" fn #export_function_name() {
             let mut context = shopify_function::wasm_api::Context::new();
-            let root_value = context.input_get().expect("Failed to get input");
-            let mut input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).expect("Failed to deserialize input");
-            let result = #function_name(input).expect("Failed to call function");
-            shopify_function::wasm_api::Serialize::serialize(&result, &mut context).expect("Failed to serialize output");
-            context.finalize_output().expect("Failed to finalize output");
+            let root_value = context.input_get().unwrap_or_else(|err| {
+                eprintln!("Failed to get input from WASM context: {:?}", err);
+                panic!("Failed to get input from WASM context")
+            });
+            let input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).unwrap_or_else(|err| {
+                eprintln!("Failed to deserialize input of type {}: {:?}", stringify!(#input_type), err);
+                panic!("Failed to deserialize input")
+            });
+            let result = #function_name(input).unwrap_or_else(|err| {
+                eprintln!("Function {} returned an error: {:?}", #function_name_string, err);
+                panic!("Function execution failed")
+            });
+            shopify_function::wasm_api::Serialize::serialize(&result, &mut context).unwrap_or_else(|err| {
+                eprintln!("Failed to serialize output: {:?}", err);
+                panic!("Failed to serialize output")
+            });
+            context.finalize_output().unwrap_or_else(|err| {
+                eprintln!("Failed to finalize output: {:?}", err);
+                panic!("Failed to finalize output")
+            });
         }
 
         #ast
@@ -354,7 +369,10 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
 
                         let value = self.#field_name_ident.get_or_init(|| {
                             let value = self.__wasm_value.get_interned_obj_prop(interned_string_id);
-                            shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap()
+                            shopify_function::wasm_api::Deserialize::deserialize(&value).unwrap_or_else(|err| {
+                                eprintln!("Failed to deserialize field '{}': {:?}", #field_name_lit_str, err);
+                                panic!("Failed to deserialize field")
+                            })
                         });
                         #properly_referenced_value
                     }

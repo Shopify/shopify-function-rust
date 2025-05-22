@@ -60,7 +60,10 @@ impl From<f64> for Decimal {
 impl crate::wasm_api::Deserialize for Decimal {
     fn deserialize(value: &crate::wasm_api::Value) -> Result<Self, crate::wasm_api::read::Error> {
         let string_value: String = crate::wasm_api::Deserialize::deserialize(value)?;
-        Self::try_from(string_value).map_err(|_| crate::wasm_api::read::Error::InvalidType)
+        Self::try_from(string_value).map_err(|err| {
+            eprintln!("Error deserializing Decimal from value: {}", err);
+            crate::wasm_api::read::Error::InvalidType
+        })
     }
 }
 

@@ -35,12 +35,16 @@ impl Deserialize for JsonValue {
             for i in 0..object_len {
                 let key = value
                     .get_obj_key_at_index(i)
-                    .ok_or(ReadError::InvalidType)?;
+                    .ok_or_else(|| {
+                        eprintln!("Error deserializing JsonValue: missing object key at index {}", i);
+                        ReadError::InvalidType
+                    })?;
                 let value = value.get_at_index(i);
                 object.insert(key.to_string(), Self::deserialize(&value)?);
             }
             Ok(Self::Object(object))
         } else {
+            eprintln!("Error deserializing JsonValue: value is not a recognized JSON type");
             Err(ReadError::InvalidType)
         }
     }
