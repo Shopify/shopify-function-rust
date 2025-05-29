@@ -721,10 +721,14 @@ impl ShopifyFunctionCodeGenerator {
 ///   1. The field's value is explicitly `null` in the JSON
 ///   2. The field is missing entirely from the JSON object
 ///
+/// - `#[shopify_function(rename = "custom_name")]` - When applied to a field, uses the specified
+///   custom name for deserialization instead of the field's Rust name. This takes precedence over
+///   any struct-level `rename_all` attribute.
+///
 /// This is similar to serde's `#[serde(default)]` attribute, allowing structs to handle missing or null
 /// fields gracefully by using their default values instead of returning an error.
 ///
-/// Note: Fields that use `#[shopify_function(default)]` must be a type that implements the `Default` trait.  
+/// Note: Fields that use `#[shopify_function(default)]` must be a type that implements the `Default` trait.
 #[proc_macro_derive(Deserialize, attributes(shopify_function))]
 pub fn derive_deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
@@ -732,6 +736,34 @@ pub fn derive_deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenSt
     derive_deserialize_for_derive_input(&input)
         .map(|impl_item| impl_item.to_token_stream().into())
         .unwrap_or_else(|error| error.to_compile_error().into())
+}
+
+#[derive(Default)]
+struct FieldAttributes {
+    rename: Option<String>,
+    has_default: bool,
+}
+
+fn parse_field_attributes(field: &syn::Field) -> syn::Result<FieldAttributes> {
+    let mut attributes = FieldAttributes::default();
+
+    for attr in field.attrs.iter() {
+        if attr.path().is_ident("shopify_function") {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("rename") {
+                    attributes.rename = Some(meta.value()?.parse::<syn::LitStr>()?.value());
+                    Ok(())
+                } else if meta.path.is_ident("default") {
+                    attributes.has_default = true;
+                    Ok(())
+                } else {
+                    Err(meta.error("unrecognized field attribute"))
+                }
+            })?;
+        }
+    }
+
+    Ok(attributes)
 }
 
 fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<syn::ItemImpl> {
@@ -775,33 +807,28 @@ fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<
                     .iter()
                     .map(|field| {
                         let field_name_ident = field.ident.as_ref().expect("Named fields must have identifiers");
-                        let field_name_str = case_style.map_or_else(|| field_name_ident.to_string(), |case_style| {
-                            field_name_ident.to_string().to_case(case_style)
-                        });
+
+                        let field_attrs = parse_field_attributes(field)?;
+
+                        let field_name_str = match field_attrs.rename {
+                            Some(custom_name) => custom_name,
+                            None => {
+                                // Fall back to rename_all case transformation or original name
+                                case_style.map_or_else(
+                                    || field_name_ident.to_string(),
+                                    |case_style| field_name_ident.to_string().to_case(case_style)
+                                )
+                            }
+                        };
+
                         let field_name_lit_str = syn::LitStr::new(field_name_str.as_str(), Span::mixed_site());
 
-                        // Check if field has #[shopify_function(default)] attribute
-                        let has_default = field.attrs.iter().any(|attr| {
-                            if attr.path().is_ident("shopify_function") {
-                                let mut found = false;
-                                let _ = attr.parse_nested_meta(|meta| {
-                                    if meta.path.is_ident("default") {
-                                        found = true;
-                                    }
-                                    Ok(())
-                                });
-                                found
-                            } else {
-                                false
-                            }
-                        });
-
-                        if has_default {
+                        if field_attrs.has_default {
                             // For fields with default attribute, check if value is null or missing
                             // This will use the Default implementation for the field type when either:
                             // 1. The field is explicitly null in the JSON (we get NanBox::null())
                             // 2. The field is missing in the JSON (get_obj_prop returns a null value)
-                            parse_quote! {
+                            Ok(parse_quote! {
                                 #field_name_ident: {
                                     let prop = value.get_obj_prop(#field_name_lit_str);
                                     if prop.is_null() {
@@ -810,15 +837,15 @@ fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<
                                         shopify_function::wasm_api::Deserialize::deserialize(&prop)?
                                     }
                                 }
-                            }
+                            })
                         } else {
                             // For fields without default, use normal deserialization
-                            parse_quote! {
+                            Ok(parse_quote! {
                                 #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))?
-                            }
+                            })
                         }
                     })
-                    .collect();
+                    .collect::<syn::Result<Vec<_>>>()?;
 
                 let deserialize_impl = parse_quote! {
                     impl shopify_function::wasm_api::Deserialize for #name_ident {
