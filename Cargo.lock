@@ -1220,7 +1220,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "shopify_function"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ryu",
  "serde_json",
@@ -1230,7 +1230,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_macro"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "bluejay-core",
  "bluejay-typegen-codegen",
