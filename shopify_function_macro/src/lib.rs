@@ -349,8 +349,10 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 parse_quote! {
                     #description
                     pub fn #field_name_ident(&self) -> #field_type {
-                        static INTERNED_FIELD_NAME: shopify_function::wasm_api::CachedInternedStringId = shopify_function::wasm_api::CachedInternedStringId::new(#field_name_lit_str, );
-                        let interned_string_id = INTERNED_FIELD_NAME.load_from_value(&self.__wasm_value);
+                        thread_local! {
+                            static INTERNED_FIELD_NAME: shopify_function::wasm_api::CachedInternedStringId = shopify_function::wasm_api::CachedInternedStringId::new(#field_name_lit_str, );
+                        }
+                        let interned_string_id = INTERNED_FIELD_NAME.with(|interned_field_name| interned_field_name.load_from_value(&self.__wasm_value));
 
                         let value = self.#field_name_ident.get_or_init(|| {
                             let value = self.__wasm_value.get_interned_obj_prop(interned_string_id);
