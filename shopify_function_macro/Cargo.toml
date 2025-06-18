@@ -1,6 +1,6 @@
 [package]
 name = "shopify_function_macro"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2021"
 authors = ["Surma <surma@shopify.com>", "Delta Pham <d.pham@shopify.com>"]
 license = "MIT"
