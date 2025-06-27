@@ -272,6 +272,18 @@ pub fn typegen(
     module.to_token_stream().into()
 }
 
+/// Helper function to determine if a GraphQL input field type is nullable
+/// Uses conservative detection to identify Optional fields from GraphQL schema
+fn is_input_field_nullable(ivd: &impl InputValueDefinition) -> bool {
+    // Use std::any::type_name to get type information as a string
+    let type_name = std::any::type_name_of_val(&ivd.r#type());
+
+    // only treat fields that are explicitly nullable as Option types
+    // This prevents incorrectly wrapping required fields in Option<T>
+    type_name.contains("Option")
+        || (type_name.contains("Nullable") && !type_name.contains("NonNull"))
+}
+
 struct ShopifyFunctionCodeGenerator;
 
 impl CodeGenerator for ShopifyFunctionCodeGenerator {
@@ -496,6 +508,10 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
     ) -> Vec<syn::ItemImpl> {
         let name_ident = names::type_ident(input_object_type_definition.name());
 
+        // Conditionally serialize fields based on GraphQL schema nullability
+        // Nullable fields (Option<T>) are only serialized if Some(_)
+        // Required fields are always serialized
+
         let field_statements: Vec<syn::Stmt> = input_object_type_definition
             .input_field_definitions()
             .iter()
@@ -503,28 +519,65 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 let field_name_ident = names::field_ident(ivd.name());
                 let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
 
-                vec![
-                    parse_quote! {
-                        context.write_utf8_str(#field_name_lit_str)?;
-                    },
-                    parse_quote! {
-                        self.#field_name_ident.serialize(context)?;
-                    },
-                ]
+                // Check if this field is nullable in the GraphQL schema
+                if is_input_field_nullable(ivd) {
+                    // For nullable fields, only serialize if Some(_)
+                    vec![parse_quote! {
+                        if let ::std::option::Option::Some(ref value) = self.#field_name_ident {
+                            context.write_utf8_str(#field_name_lit_str)?;
+                            value.serialize(context)?;
+                        }
+                    }]
+                } else {
+                    // For required fields, always serialize
+                    vec![
+                        parse_quote! {
+                            context.write_utf8_str(#field_name_lit_str)?;
+                        },
+                        parse_quote! {
+                            self.#field_name_ident.serialize(context)?;
+                        },
+                    ]
+                }
             })
             .collect();
 
-        let num_fields = input_object_type_definition.input_field_definitions().len();
+        // Generate field counting statements for dynamic field count calculation
+        let field_count_statements: Vec<syn::Stmt> = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|ivd| {
+                let field_name_ident = names::field_ident(ivd.name());
+
+                if is_input_field_nullable(ivd) {
+                    // For nullable fields, count only if Some(_)
+                    parse_quote! {
+                        if let ::std::option::Option::Some(_) = self.#field_name_ident {
+                            field_count += 1;
+                        }
+                    }
+                } else {
+                    // For required fields, always count
+                    parse_quote! {
+                        field_count += 1;
+                    }
+                }
+            })
+            .collect();
 
         let serialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Serialize for #name_ident {
                 fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    // Calculate dynamic field count based on non-null fields
+                    let mut field_count = 0usize;
+                    #(#field_count_statements)*
+
                     context.write_object(
                         |context| {
                             #(#field_statements)*
                             ::std::result::Result::Ok(())
                         },
-                        #num_fields,
+                        field_count,
                     )
                 }
             }
