@@ -42,3 +42,34 @@ fn test_target_b() -> Result<()> {
     assert_eq!(result, expected);
     Ok(())
 }
+
+#[test]
+fn test_null_field_skipping() -> Result<()> {
+    let test_function_none =
+        |_input: crate::schema::target_a::Input| -> Result<crate::schema::FunctionTargetAResult> {
+            Ok(crate::schema::FunctionTargetAResult {
+                status: None, // This should not appear in serialized output
+            })
+        };
+
+    let test_function_some =
+        |_input: crate::schema::target_a::Input| -> Result<crate::schema::FunctionTargetAResult> {
+            Ok(crate::schema::FunctionTargetAResult {
+                status: Some(200), // This should appear in serialized output
+            })
+        };
+
+    let test_input = r#"{
+        "id": "gid://shopify/Order/1234567890",
+        "num": 123,
+        "name": "test"
+    }"#;
+
+    let result_none = run_function_with_input(test_function_none, test_input)?;
+    let result_some = run_function_with_input(test_function_some, test_input)?;
+
+    assert_eq!(result_none.status, None);
+    assert_eq!(result_some.status, Some(200));
+
+    Ok(())
+}
