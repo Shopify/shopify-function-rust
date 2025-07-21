@@ -33,7 +33,7 @@ fn build_example(name: &str) -> Result<()> {
 }
 
 static FUNCTION_RUNNER_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|| {
-    let path = workspace_root().join(format!("tmp/function-runner-{}", FUNCTION_RUNNER_VERSION));
+    let path = workspace_root().join(format!("tmp/function-runner-{FUNCTION_RUNNER_VERSION}"));
 
     if !path.exists() {
         std::fs::create_dir_all(workspace_root().join("tmp"))?;
@@ -44,7 +44,7 @@ static FUNCTION_RUNNER_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|
 });
 
 static TRAMPOLINE_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|| {
-    let path = workspace_root().join(format!("tmp/trampoline-{}", TRAMPOLINE_VERSION));
+    let path = workspace_root().join(format!("tmp/trampoline-{TRAMPOLINE_VERSION}"));
     if !path.exists() {
         std::fs::create_dir_all(workspace_root().join("tmp"))?;
         download_trampoline(&path)?;
@@ -56,8 +56,7 @@ fn download_function_runner(destination: &PathBuf) -> Result<()> {
     download_from_github(
         |target_arch, target_os| {
             format!(
-                "https://github.com/Shopify/function-runner/releases/download/v{}/function-runner-{}-{}-v{}.gz",
-                FUNCTION_RUNNER_VERSION, target_arch, target_os, FUNCTION_RUNNER_VERSION,
+                "https://github.com/Shopify/function-runner/releases/download/v{FUNCTION_RUNNER_VERSION}/function-runner-{target_arch}-{target_os}-v{FUNCTION_RUNNER_VERSION}.gz",
             )
         },
         destination,
@@ -68,8 +67,7 @@ fn download_trampoline(destination: &PathBuf) -> Result<()> {
     download_from_github(
         |target_arch, target_os| {
             format!(
-            "https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v{}/shopify-function-trampoline-{}-{}-v{}.gz",
-            TRAMPOLINE_VERSION, target_arch, target_os, TRAMPOLINE_VERSION,
+            "https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v{TRAMPOLINE_VERSION}/shopify-function-trampoline-{target_arch}-{target_os}-v{TRAMPOLINE_VERSION}.gz",
         )
         },
         destination,
@@ -127,10 +125,10 @@ pub fn prepare_example(name: &str) -> Result<PathBuf> {
     build_example(name)?;
     let wasm_path = workspace_root()
         .join("target/wasm32-wasip1/release")
-        .join(format!("{}.wasm", name));
+        .join(format!("{name}.wasm"));
     let trampolined_path = workspace_root()
         .join("target/wasm32-wasip1/release")
-        .join(format!("{}-trampolined.wasm", name));
+        .join(format!("{name}-trampolined.wasm"));
     let trampoline_path = TRAMPOLINE_PATH
         .as_ref()
         .map_err(|e| anyhow::anyhow!("Failed to download trampoline: {}", e))?;

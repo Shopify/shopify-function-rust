@@ -78,7 +78,7 @@ fn test_field_rename_takes_precedence_over_rename_all() {
     let input = TestStructWithRename::deserialize(&root_value).unwrap();
     assert_eq!(input.field_one, "correct");
     assert_eq!(input.field_two, 10);
-    assert_eq!(input.field_three, false);
+    assert!(!input.field_three);
 }
 
 #[derive(Deserialize, PartialEq, Debug)]
