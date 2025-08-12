@@ -12,7 +12,7 @@ proc-macro = true
 [dependencies]
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
-proc-macro2 = "1.0.94"
+proc-macro2 = "1.0.96"
 bluejay-typegen-codegen = "0.3.1"
 bluejay-core = "0.3.1"
 convert_case = "0.8"
