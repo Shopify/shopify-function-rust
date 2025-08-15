@@ -16,13 +16,14 @@ fn test_example_with_targets_target_a() -> Result<()> {
         "name": "test",
         "country": "CA"
     });
-    let output = run_example(path.clone(), "target_a", input)?;
+    let (output, logs) = run_example(path.clone(), "target_a", input)?;
     assert_eq!(
         output,
         serde_json::json!({
             "status": 200
         })
     );
+    assert_eq!(logs, "In target_a\nWith var: 42\nWith var: 42\n");
     Ok(())
 }
 
@@ -35,7 +36,7 @@ fn test_example_with_targets_target_b() -> Result<()> {
         "id": "gid://shopify/Order/1234567890",
         "targetAResult": 200
     });
-    let output = run_example(path.clone(), "target_b", input)?;
+    let (output, logs) = run_example(path.clone(), "target_b", input)?;
     assert_eq!(
         output,
         serde_json::json!({
@@ -54,5 +55,6 @@ fn test_example_with_targets_target_b() -> Result<()> {
             ]
         })
     );
+    assert_eq!(logs, "In target_b\n");
     Ok(())
 }

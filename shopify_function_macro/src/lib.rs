@@ -104,7 +104,6 @@ pub fn shopify_function(
             let mut input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).expect("Failed to deserialize input");
             let result = #function_name(input).expect("Failed to call function");
             shopify_function::wasm_api::Serialize::serialize(&result, &mut context).expect("Failed to serialize output");
-            context.finalize_output().expect("Failed to finalize output");
         }
 
         #ast
@@ -350,7 +349,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                     #description
                     pub fn #field_name_ident(&self) -> #field_type {
                         static INTERNED_FIELD_NAME: shopify_function::wasm_api::CachedInternedStringId = shopify_function::wasm_api::CachedInternedStringId::new(#field_name_lit_str, );
-                        let interned_string_id = INTERNED_FIELD_NAME.load_from_value(&self.__wasm_value);
+                        let interned_string_id = INTERNED_FIELD_NAME.load();
 
                         let value = self.#field_name_ident.get_or_init(|| {
                             let value = self.__wasm_value.get_interned_obj_prop(interned_string_id);
