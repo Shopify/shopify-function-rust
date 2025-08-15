@@ -25,6 +25,7 @@ pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 pub mod scalars;
 
 pub mod prelude {
+    pub use crate::log;
     pub use crate::scalars::*;
     pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 }
@@ -43,6 +44,18 @@ where
     let context = wasm_api::Context::new_with_input(parsed_json);
     let input = wasm_api::Deserialize::deserialize(&context.input_get().unwrap()).unwrap();
     f(input)
+}
+
+#[macro_export]
+macro_rules! log {
+    ($($args:tt)*) => {
+        {
+            use std::fmt::Write;
+            let mut buf = String::new();
+            writeln!(&mut buf, $($args)*).unwrap();
+            $crate::wasm_api::Context.log(&buf);
+        }
+    };
 }
 
 pub use shopify_function_wasm_api as wasm_api;
