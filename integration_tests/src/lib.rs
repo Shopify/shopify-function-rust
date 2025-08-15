@@ -6,7 +6,7 @@ use std::{
     sync::LazyLock,
 };
 
-const FUNCTION_RUNNER_VERSION: &str = "8.0.0";
+const FUNCTION_RUNNER_VERSION: &str = "9.0.0";
 const TRAMPOLINE_VERSION: &str = "1.0.0";
 
 fn workspace_root() -> std::path::PathBuf {
@@ -189,7 +189,7 @@ pub fn run_example(
     let mut output_bytes = Vec::new();
     output.read_to_end(&mut output_bytes)?;
 
-    let output: serde_json::Value = serde_json::from_slice(&output_bytes)?;
+    let mut output: serde_json::Value = serde_json::from_slice(&output_bytes)?;
 
     if !status.success() {
         let logs = output
@@ -205,10 +205,9 @@ pub fn run_example(
         );
     }
 
-    let output_json_str = output
-        .get("output")
-        .and_then(|o| o.get("humanized").and_then(|h| h.as_str()))
-        .ok_or_else(|| anyhow::anyhow!("No output"))?;
-    let output_json: serde_json::Value = serde_json::from_str(output_json_str)?;
+    let output_json = output
+        .get_mut("output")
+        .ok_or_else(|| anyhow::anyhow!("No output"))?
+        .take();
     Ok(output_json)
 }
