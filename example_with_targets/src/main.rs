@@ -39,6 +39,11 @@ fn target_b(input: schema::target_b::Input) -> Result<schema::FunctionTargetBRes
     })
 }
 
+#[shopify_function]
+fn target_panic(_input: schema::target_a::Input) -> Result<schema::FunctionTargetAResult> {
+    panic!("Something went wrong");
+}
+
 fn main() {
     process::abort()
 }

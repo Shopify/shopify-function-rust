@@ -99,6 +99,7 @@ pub fn shopify_function(
     quote! {
         #[export_name = #function_name_string]
         pub extern "C" fn #export_function_name() {
+            shopify_function::wasm_api::init_panic_handler();
             let mut context = shopify_function::wasm_api::Context::new();
             let root_value = context.input_get().expect("Failed to get input");
             let mut input: #input_type = shopify_function::wasm_api::Deserialize::deserialize(&root_value).expect("Failed to deserialize input");
