@@ -72,7 +72,7 @@ fn test_example_with_panic() -> Result<()> {
         .unwrap_err()
         .to_string();
     let expected_err =
-        "Function runner returned non-zero exit code: exit status: 1, logs: panicked at example_with_targets/src/main.rs:44:5:\nSomething went wrong\nerror while executing at wasm backtrace:";
+        "Function runner returned non-zero exit code: exit status: 1, logs: panicked at example_with_targets/src/main.rs:45:5:\nSomething went wrong\nerror while executing at wasm backtrace:";
     assert!(
         err.contains(expected_err),
         "Expected error message to contain:\n`{expected_err}`\nbut was:\n`{err}`"

@@ -3,6 +3,7 @@ use std::process;
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 #[shopify_function(rename_all = "camelCase")]
 struct Configuration {}
