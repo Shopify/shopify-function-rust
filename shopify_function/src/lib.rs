@@ -20,6 +20,9 @@
 //! }
 //! ```
 
+#[cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p1"))]
+compile_error!("Compiling to wasm32-wasip1 is unsupported, change your target to wasm32-unknown-unknown instead");
+
 pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 
 pub mod scalars;
