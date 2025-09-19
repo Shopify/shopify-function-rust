@@ -6,7 +6,7 @@ use std::{
     sync::LazyLock,
 };
 
-const FUNCTION_RUNNER_VERSION: &str = "9.0.0";
+const FUNCTION_RUNNER_VERSION: &str = "9.1.0";
 const TRAMPOLINE_VERSION: &str = "2.0.0";
 
 fn workspace_root() -> std::path::PathBuf {
