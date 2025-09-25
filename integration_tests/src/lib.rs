@@ -6,8 +6,8 @@ use std::{
     sync::LazyLock,
 };
 
-const FUNCTION_RUNNER_VERSION: &str = "9.0.0";
-const TRAMPOLINE_VERSION: &str = "1.0.0";
+const FUNCTION_RUNNER_VERSION: &str = "9.1.0";
+const TRAMPOLINE_VERSION: &str = "2.0.0";
 
 fn workspace_root() -> std::path::PathBuf {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
@@ -21,7 +21,7 @@ fn build_example(name: &str) -> Result<()> {
             "build",
             "--release",
             "--target",
-            "wasm32-wasip1",
+            "wasm32-unknown-unknown",
             "-p",
             name,
         ])
@@ -124,10 +124,10 @@ fn download_from_github(
 pub fn prepare_example(name: &str) -> Result<PathBuf> {
     build_example(name)?;
     let wasm_path = workspace_root()
-        .join("target/wasm32-wasip1/release")
+        .join("target/wasm32-unknown-unknown/release")
         .join(format!("{name}.wasm"));
     let trampolined_path = workspace_root()
-        .join("target/wasm32-wasip1/release")
+        .join("target/wasm32-unknown-unknown/release")
         .join(format!("{name}-trampolined.wasm"));
     let trampoline_path = TRAMPOLINE_PATH
         .as_ref()
@@ -152,7 +152,7 @@ pub fn run_example(
     path: PathBuf,
     export: &str,
     input: serde_json::Value,
-) -> Result<serde_json::Value> {
+) -> Result<(serde_json::Value, String)> {
     let function_runner_path = FUNCTION_RUNNER_PATH
         .as_ref()
         .map_err(|e| anyhow::anyhow!("Failed to download function runner: {}", e))?;
@@ -191,13 +191,14 @@ pub fn run_example(
 
     let mut output: serde_json::Value = serde_json::from_slice(&output_bytes)?;
 
-    if !status.success() {
-        let logs = output
-            .get("logs")
-            .ok_or_else(|| anyhow::anyhow!("No logs"))?
-            .as_str()
-            .ok_or_else(|| anyhow::anyhow!("Logs are not a string"))?;
+    let logs = output
+        .get("logs")
+        .ok_or_else(|| anyhow::anyhow!("No logs"))?
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("Logs are not a string"))?
+        .to_string();
 
+    if !status.success() {
         anyhow::bail!(
             "Function runner returned non-zero exit code: {}, logs: {}",
             status,
@@ -209,5 +210,5 @@ pub fn run_example(
         .get_mut("output")
         .ok_or_else(|| anyhow::anyhow!("No output"))?
         .take();
-    Ok(output_json)
+    Ok((output_json, logs))
 }

@@ -1,3 +1,5 @@
+use std::process;
+
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
@@ -17,11 +19,16 @@ mod schema {
 
 #[shopify_function]
 fn target_a(_input: schema::target_a::Input) -> Result<schema::FunctionTargetAResult> {
+    log!("In target_a");
+    let var = 42;
+    log!("With var: {var}");
+    log!("With var: {}", var);
     Ok(schema::FunctionTargetAResult { status: Some(200) })
 }
 
 #[shopify_function]
 fn target_b(input: schema::target_b::Input) -> Result<schema::FunctionTargetBResult> {
+    log!("In target_b");
     Ok(schema::FunctionTargetBResult {
         name: Some(format!("new name: \"{}\"", input.id())),
         operations: vec![
@@ -33,9 +40,14 @@ fn target_b(input: schema::target_b::Input) -> Result<schema::FunctionTargetBRes
     })
 }
 
+#[shopify_function]
+fn target_panic(_input: schema::target_a::Input) -> Result<schema::FunctionTargetAResult> {
+    panic!("Something went wrong");
+}
+
 fn main() {
-    eprintln!("Invoke a named import");
-    std::process::exit(1);
+    log!("Invoke a named export");
+    process::abort()
 }
 
 #[cfg(test)]

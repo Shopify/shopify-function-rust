@@ -20,11 +20,15 @@
 //! }
 //! ```
 
+#[cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p1"))]
+compile_error!("Compiling to wasm32-wasip1 is unsupported, change your target to wasm32-unknown-unknown instead");
+
 pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 
 pub mod scalars;
 
 pub mod prelude {
+    pub use crate::log;
     pub use crate::scalars::*;
     pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 }
@@ -43,6 +47,18 @@ where
     let context = wasm_api::Context::new_with_input(parsed_json);
     let input = wasm_api::Deserialize::deserialize(&context.input_get().unwrap()).unwrap();
     f(input)
+}
+
+#[macro_export]
+macro_rules! log {
+    ($($args:tt)*) => {
+        {
+            use std::fmt::Write;
+            let mut buf = std::string::String::new();
+            writeln!(&mut buf, $($args)*).unwrap();
+            $crate::wasm_api::Context.log(&buf);
+        }
+    };
 }
 
 pub use shopify_function_wasm_api as wasm_api;
