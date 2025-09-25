@@ -54,7 +54,7 @@ macro_rules! log {
     ($($args:tt)*) => {
         {
             use std::fmt::Write;
-            let mut buf = String::new();
+            let mut buf = std::string::String::new();
             writeln!(&mut buf, $($args)*).unwrap();
             $crate::wasm_api::Context.log(&buf);
         }
