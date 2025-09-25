@@ -46,6 +46,7 @@ fn target_panic(_input: schema::target_a::Input) -> Result<schema::FunctionTarge
 }
 
 fn main() {
+    log!("Invoke a named export");
     process::abort()
 }
 
