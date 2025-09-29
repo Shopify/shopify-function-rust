@@ -6,5 +6,5 @@ license = "MIT"
 
 [dependencies]
 shopify_function = { path = "../shopify_function" }
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0"
