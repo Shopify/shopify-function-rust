@@ -1234,7 +1234,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "shopify_function"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "ryu",
  "serde_json",
@@ -1244,7 +1244,7 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_macro"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "bluejay-core",
  "bluejay-typegen-codegen",
@@ -1256,9 +1256,9 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_provider"
-version = "2.0.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f92a23bc3d343786dd32049e8e2453a058f8e37a4bf953504ebe52189c1b1ebf"
+checksum = "eb8178e79dd651ca3e1474ab942265fb4044a73c28b1d05687519c6ac65637c2"
 dependencies = [
  "bumpalo",
  "rmp",
@@ -1267,9 +1267,9 @@ dependencies = [
 
 [[package]]
 name = "shopify_function_wasm_api"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "132521368234c994edd82c1ccec033dd8128ec82d21e3dddca4ceb16d94bb2cc"
+checksum = "42fffecf0421a95118df56563785a1703fa5ed940b26c75ac7990c72f6ce3c47"
 dependencies = [
  "rmp-serde",
  "seq-macro",
