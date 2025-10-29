@@ -7,6 +7,12 @@ members = [
     "integration_tests",
 ]
 
+[workspace.package]
+version = "2.0.1"
+
+[workspace.dependencies]
+shopify_function_macro = { version = "=2.0.1", path = "shopify_function_macro" }
+
 [profile.release]
 lto = true
 opt-level = 'z'
