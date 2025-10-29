@@ -28,6 +28,8 @@ pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 pub mod scalars;
 
 pub mod prelude {
+    #[allow(deprecated)]
+    pub use crate::eprintln;
     pub use crate::log;
     pub use crate::scalars::*;
     pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
@@ -59,6 +61,12 @@ macro_rules! log {
             $crate::wasm_api::Context.log(&buf);
         }
     };
+}
+
+#[macro_export]
+#[deprecated(note = "Use log! instead")]
+macro_rules! eprintln {
+    ($($tt:tt)*) => { std::eprintln!($($tt)*) }
 }
 
 pub use shopify_function_wasm_api as wasm_api;
