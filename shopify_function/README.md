@@ -10,6 +10,46 @@ A crate to help developers build [Shopify Functions].
 
 See the [example_with_targets] for details on usage, or use the following guide to convert an existing Rust-based function.
 
+## Updating an existing function to using shopify_function 2.0.0 and higher
+
+If you are using a version less than `1.0.0`, you should update to version `1.1.1` as outlined below before following these steps.
+
+1. [Update to the latest](https://shopify.dev/docs/api/shopify-cli#installation) Shopify CLI version.
+
+2. Install the `wasm32-unknown-unknown` build target using [`rustup target`](https://rust-lang.github.io/rustup/cross-compilation.html):
+
+    ```terminal
+    rustup target add wasm32-unknown-unknown
+    ```
+
+3. Update your build `command` and `path` in the `[extensions.build]` section of your [`shopify.extension.toml`](https://shopify.dev/docs/api/functions/latest#configuration) to use `wasm32-unknown-unknown` instead of `wasm32-wasip1`. Replace `RUST-PACKAGE-NAME` with the `name` from your `Cargo.toml`:
+
+    ```toml
+    [extensions.build]
+    command = "cargo build --target=wasm32-unknown-unknown --release"
+    path = "target/wasm32-unknown-unknown/release/[RUST-PACKAGE-NAME].wasm"
+    ```
+
+4. Throughout all of your source files, update any references to `eprintln!` to use `log!` instead.
+
+    ```rust
+    #[shopify_function]
+    fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
+      log!("This will be logged");
+      todo!();
+    }
+    ```
+
+5. Throughout all of your source files, update any references to `process::exit(1)` to use `process::abort()` instead.
+
+    ```rust
+    #[shopify_function]
+    fn run(input: schema::run::Input) -> Result<schema::FunctionRunResult> {
+      log!("Please invoke a named export.");
+      process::abort();
+    }
+    ```
+
 ## Updating an existing function using a version of `shopify_function` below `1.0.0` to use version `1.0.0` and above
 
 1.  In `main.rs`, add imports for `shopify_function`.
