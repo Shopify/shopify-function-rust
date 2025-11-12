@@ -125,7 +125,7 @@ You can also use the [cargo-expand](https://github.com/dtolnay/cargo-expand) cra
 
 ---
 
-License Apache-2.0
+License MIT
 
 [Shopify Functions]: https://shopify.dev/api/functions
 [`generate_types`]: https://docs.rs/shopify_function/latest/shopify_function/macro.typegen.html

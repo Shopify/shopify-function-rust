@@ -5,4 +5,4 @@ This crate mostly contains macros that are re-exported by the
 and contains all the documentation.
 
 ---
-License Apache-2.0
+License MIT
