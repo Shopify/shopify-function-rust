@@ -15,6 +15,9 @@ mod schema {
 
     #[query("./b.graphql")]
     pub mod target_b {}
+
+    #[query("./cart.graphql")]
+    pub mod target_cart {}
 }
 
 #[shopify_function]
@@ -43,6 +46,20 @@ fn target_b(input: schema::target_b::Input) -> Result<schema::FunctionTargetBRes
 #[shopify_function]
 fn target_panic(_input: schema::target_a::Input) -> Result<schema::FunctionTargetAResult> {
     panic!("Something went wrong");
+}
+
+#[shopify_function]
+fn target_cart(input: schema::target_cart::Input) -> Result<schema::FunctionTargetCartResult> {
+    // Iterate over cart lines and sum quantities - this accesses the `quantity` property
+    // multiple times, which should benefit from interned string caching
+    let total_quantity: i32 = input
+        .cart_lines()
+        .unwrap_or(&[])
+        .iter()
+        .map(|line| *line.quantity())
+        .sum();
+
+    Ok(schema::FunctionTargetCartResult { total_quantity })
 }
 
 fn main() {

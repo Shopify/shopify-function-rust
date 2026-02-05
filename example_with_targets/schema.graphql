@@ -62,6 +62,15 @@ A void type that can be used to return a null value from a mutation.
 scalar Void
 
 """
+A cart line representing an item in the cart.
+"""
+type CartLine {
+  id: ID!
+  quantity: Int!
+  title: String!
+}
+
+"""
 The input object for the function.
 """
 type Input {
@@ -77,6 +86,7 @@ type Input {
   optionalArray: [String!]
   optionalArrayOfArrays: [[String!]!]
   optionalArrayOfOptionalArrays: [[String!]]
+  cartLines: [CartLine!] @restrictTarget(only: ["test.target-cart"])
 }
 
 """
@@ -102,6 +112,16 @@ type MutationRoot {
     """
     result: FunctionTargetBResult!
   ): Void!
+
+  """
+  The function for API target Cart.
+  """
+  targetCart(
+    """
+    The result of calling the function for API target Cart.
+    """
+    result: FunctionTargetCartResult!
+  ): Void!
 }
 
 """
@@ -117,6 +137,13 @@ The result of API target B.
 input FunctionTargetBResult {
   name: String
   operations: [Operation!]!
+}
+
+"""
+The result of API target Cart.
+"""
+input FunctionTargetCartResult {
+  totalQuantity: Int!
 }
 
 input Operation @oneOf {

@@ -6,6 +6,19 @@ use std::{
     sync::LazyLock,
 };
 
+/// Result from running a Shopify Function
+#[derive(Debug)]
+pub struct RunResult {
+    /// The JSON output from the function
+    pub output: serde_json::Value,
+    /// The logs from the function
+    pub logs: String,
+    /// The number of instructions executed
+    pub instructions: u64,
+    /// The memory usage in bytes
+    pub memory_usage: u64,
+}
+
 const FUNCTION_RUNNER_VERSION: &str = "9.1.0";
 const TRAMPOLINE_VERSION: &str = "2.0.0";
 
@@ -152,7 +165,7 @@ pub fn run_example(
     path: PathBuf,
     export: &str,
     input: serde_json::Value,
-) -> Result<(serde_json::Value, String)> {
+) -> Result<RunResult> {
     let function_runner_path = FUNCTION_RUNNER_PATH
         .as_ref()
         .map_err(|e| anyhow::anyhow!("Failed to download function runner: {}", e))?;
@@ -198,6 +211,16 @@ pub fn run_example(
         .ok_or_else(|| anyhow::anyhow!("Logs are not a string"))?
         .to_string();
 
+    let instructions = output
+        .get("instructions")
+        .and_then(|v| v.as_u64())
+        .ok_or_else(|| anyhow::anyhow!("No instructions count"))?;
+
+    let memory_usage = output
+        .get("memory_usage")
+        .and_then(|v| v.as_u64())
+        .ok_or_else(|| anyhow::anyhow!("No memory_usage"))?;
+
     if !status.success() {
         anyhow::bail!(
             "Function runner returned non-zero exit code: {}, logs: {}",
@@ -210,5 +233,11 @@ pub fn run_example(
         .get_mut("output")
         .ok_or_else(|| anyhow::anyhow!("No output"))?
         .take();
-    Ok((output_json, logs))
+
+    Ok(RunResult {
+        output: output_json,
+        logs,
+        instructions,
+        memory_usage,
+    })
 }
