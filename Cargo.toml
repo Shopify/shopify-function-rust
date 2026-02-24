@@ -8,10 +8,10 @@ members = [
 ]
 
 [workspace.package]
-version = "2.0.3"
+version = "2.1.0"
 
 [workspace.dependencies]
-shopify_function_macro = { version = "=2.0.3", path = "shopify_function_macro" }
+shopify_function_macro = { version = "=2.1.0", path = "shopify_function_macro" }
 
 [profile.release]
 lto = true
