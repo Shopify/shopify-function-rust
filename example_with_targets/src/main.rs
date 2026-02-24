@@ -51,7 +51,7 @@ fn target_panic(_input: schema::target_a::Input) -> Result<schema::FunctionTarge
 #[shopify_function]
 fn target_cart(input: schema::target_cart::Input) -> Result<schema::FunctionTargetCartResult> {
     // Iterate over cart lines and sum quantities - this accesses the `quantity` property
-    // multiple times, which should benefit from interned string caching
+    // multiple times, which would demonstrate any benefit from interning strings
     let total_quantity: i32 = input
         .cart_lines()
         .unwrap_or(&[])
