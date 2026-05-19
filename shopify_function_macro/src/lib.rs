@@ -539,7 +539,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         let serialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Serialize for #name_ident {
                 fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
-                    let field_count: usize = #num_required_fields #(+ #optional_field_count_terms)*;
+                    let field_count: ::std::primitive::usize = #num_required_fields #(+ #optional_field_count_terms)*;
 
                     context.write_object(
                         |context| {
