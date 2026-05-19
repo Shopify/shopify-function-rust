@@ -532,7 +532,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             .filter(|ivd| !ivd.is_required())
             .map(|ivd| {
                 let field_name_ident = names::field_ident(ivd.name());
-                parse_quote! { usize::from(self.#field_name_ident.is_some()) }
+                parse_quote! { ::std::primitive::usize::from(self.#field_name_ident.is_some()) }
             })
             .collect();
 
