@@ -500,28 +500,53 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 let field_name_ident = names::field_ident(ivd.name());
                 let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
 
-                vec![
-                    parse_quote! {
-                        context.write_utf8_str(#field_name_lit_str)?;
-                    },
-                    parse_quote! {
-                        self.#field_name_ident.serialize(context)?;
-                    },
-                ]
+                if ivd.is_required() {
+                    vec![
+                        parse_quote! {
+                            context.write_utf8_str(#field_name_lit_str)?;
+                        },
+                        parse_quote! {
+                            self.#field_name_ident.serialize(context)?;
+                        },
+                    ]
+                } else {
+                    vec![parse_quote! {
+                        if let ::std::option::Option::Some(value) = &self.#field_name_ident {
+                            context.write_utf8_str(#field_name_lit_str)?;
+                            value.serialize(context)?;
+                        }
+                    }]
+                }
             })
             .collect();
 
-        let num_fields = input_object_type_definition.input_field_definitions().len();
+        let num_required_fields = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .filter(|ivd| ivd.is_required())
+            .count();
+
+        let optional_field_count_terms: Vec<syn::Expr> = input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .filter(|ivd| !ivd.is_required())
+            .map(|ivd| {
+                let field_name_ident = names::field_ident(ivd.name());
+                parse_quote! { ::std::primitive::usize::from(self.#field_name_ident.is_some()) }
+            })
+            .collect();
 
         let serialize_impl = parse_quote! {
             impl shopify_function::wasm_api::Serialize for #name_ident {
                 fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    let field_count: ::std::primitive::usize = #num_required_fields #(+ #optional_field_count_terms)*;
+
                     context.write_object(
                         |context| {
                             #(#field_statements)*
                             ::std::result::Result::Ok(())
                         },
-                        #num_fields,
+                        field_count,
                     )
                 }
             }

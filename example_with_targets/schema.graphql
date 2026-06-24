@@ -131,6 +131,12 @@ input FunctionTargetAResult {
   status: Int
 }
 
+input SerializationProbe {
+  optionalValue: Int
+  defaultedValue: Int! = 200
+  requiredValue: Int!
+}
+
 """
 The result of API target B.
 """
