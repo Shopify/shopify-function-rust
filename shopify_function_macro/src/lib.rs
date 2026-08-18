@@ -298,7 +298,7 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
                 #(#once_cell_fields),*
             }
         };
-        fields_named.into()
+        syn::Fields::Named(fields_named)
     }
 
     fn additional_impls_for_executable_struct(
