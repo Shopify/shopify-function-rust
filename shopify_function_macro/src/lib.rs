@@ -13,7 +13,7 @@ use bluejay_typegen_codegen::{
 use convert_case::{Case, Casing};
 use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
-use syn::{parse_macro_input, parse_quote, FnArg};
+use syn::{parse_macro_input, parse_quote, spanned::Spanned, FnArg};
 
 fn extract_shopify_function_return_type(ast: &syn::ItemFn) -> Result<&syn::Ident, syn::Error> {
     use syn::*;
@@ -735,6 +735,13 @@ impl ShopifyFunctionCodeGenerator {
 ///
 /// The derive macro supports the following attributes:
 ///
+/// - `#[shopify_function(serde)]` - Deserializes the type with `serde` instead of with generated
+///   code. The type must also implement `serde::Deserialize`, usually with
+///   `#[derive(serde::Deserialize)]`, and all of the `serde` attributes apply. Use this for types
+///   that generated code does not support, such as enums, and for types that are the target of a
+///   `custom_scalar_overrides` entry in a query. See the `shopify_function::serde_adapter` module
+///   for more details.
+///
 /// - `#[shopify_function(rename_all = "camelCase")]` - Converts field names from snake_case in Rust
 ///   to the specified case style ("camelCase", "snake_case", or "kebab-case") when deserializing.
 ///
@@ -751,6 +758,20 @@ impl ShopifyFunctionCodeGenerator {
 /// fields gracefully by using their default values instead of returning an error.
 ///
 /// Note: Fields that use `#[shopify_function(default)]` must be a type that implements the `Default` trait.
+///
+/// ### Example with `serde`
+///
+/// ```ignore
+/// #[derive(serde::Deserialize, Deserialize)]
+/// #[shopify_function(serde)]
+/// #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+/// enum Status {
+///     Active,   // deserialized from "ACTIVE"
+///     Archived, // deserialized from "ARCHIVED"
+///     #[serde(other)]
+///     Other,    // deserialized from any other string
+/// }
+/// ```
 #[proc_macro_derive(Deserialize, attributes(shopify_function))]
 pub fn derive_deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
@@ -788,28 +809,116 @@ fn parse_field_attributes(field: &syn::Field) -> syn::Result<FieldAttributes> {
     Ok(attributes)
 }
 
+#[derive(Default)]
+struct ContainerAttributes {
+    rename_all: Option<syn::LitStr>,
+    serde: Option<Span>,
+}
+
+fn parse_container_attributes(input: &syn::DeriveInput) -> syn::Result<ContainerAttributes> {
+    let mut attributes = ContainerAttributes::default();
+
+    for attr in input.attrs.iter() {
+        if attr.path().is_ident("shopify_function") {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("rename_all") {
+                    attributes.rename_all = Some(meta.value()?.parse()?);
+                    Ok(())
+                } else if meta.path.is_ident("serde") {
+                    attributes.serde = Some(meta.path.span());
+                    Ok(())
+                } else {
+                    Err(meta.error("unrecognized container attribute"))
+                }
+            })?;
+        }
+    }
+
+    if let (Some(serde), Some(rename_all)) = (attributes.serde, attributes.rename_all.as_ref()) {
+        let mut error = syn::Error::new_spanned(
+            rename_all,
+            "`rename_all` is not used with `serde`; use `#[serde(rename_all = \"...\")]` instead",
+        );
+        error.combine(syn::Error::new(serde, "`serde` is set here"));
+        return Err(error);
+    }
+
+    Ok(attributes)
+}
+
+/// Generates an implementation that dispatches to `serde`, for a type that is annotated with
+/// `#[shopify_function(serde)]`.
+fn derive_deserialize_with_serde(input: &syn::DeriveInput) -> syn::Result<syn::ItemImpl> {
+    if let Some(attr) = inner_shopify_function_attribute(input) {
+        return Err(syn::Error::new_spanned(
+            attr,
+            "`shopify_function` attributes on fields and variants are not used with `serde`; use `serde` attributes instead",
+        ));
+    }
+
+    let name_ident = &input.ident;
+    let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
+
+    // The bound makes the error easier to understand for a type that does not implement
+    // `serde::Deserialize`, and lets generic types work.
+    let where_clause: syn::WhereClause = match where_clause {
+        Some(where_clause) => {
+            let mut where_clause = where_clause.clone();
+            where_clause
+                .predicates
+                .push(parse_quote! { Self: shopify_function::serde_adapter::DeserializeOwned });
+            where_clause
+        }
+        None => parse_quote! { where Self: shopify_function::serde_adapter::DeserializeOwned },
+    };
+
+    Ok(parse_quote! {
+        impl #impl_generics shopify_function::wasm_api::Deserialize for #name_ident #type_generics #where_clause {
+            fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                shopify_function::serde_adapter::from_value(value).map_err(::std::convert::Into::into)
+            }
+        }
+    })
+}
+
+/// Returns the first `shopify_function` attribute on a field or a variant, if there is one.
+fn inner_shopify_function_attribute(input: &syn::DeriveInput) -> Option<&syn::Attribute> {
+    fn attribute_of(attrs: &[syn::Attribute]) -> Option<&syn::Attribute> {
+        attrs
+            .iter()
+            .find(|attr| attr.path().is_ident("shopify_function"))
+    }
+
+    fn attribute_of_fields(fields: &syn::Fields) -> Option<&syn::Attribute> {
+        fields.iter().find_map(|field| attribute_of(&field.attrs))
+    }
+
+    match &input.data {
+        syn::Data::Struct(data) => attribute_of_fields(&data.fields),
+        syn::Data::Enum(data) => data.variants.iter().find_map(|variant| {
+            attribute_of(&variant.attrs).or_else(|| attribute_of_fields(&variant.fields))
+        }),
+        syn::Data::Union(data) => data
+            .fields
+            .named
+            .iter()
+            .find_map(|field| attribute_of(&field.attrs)),
+    }
+}
+
 fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<syn::ItemImpl> {
+    let container_attributes = parse_container_attributes(input)?;
+
+    if container_attributes.serde.is_some() {
+        return derive_deserialize_with_serde(input);
+    }
+
     match &input.data {
         syn::Data::Struct(data) => match &data.fields {
             syn::Fields::Named(fields) => {
                 let name_ident = &input.ident;
 
-                let mut rename_all: Option<syn::LitStr> = None;
-
-                for attr in input.attrs.iter() {
-                    if attr.path().is_ident("shopify_function") {
-                        attr.parse_nested_meta(|meta| {
-                            if meta.path.is_ident("rename_all") {
-                                rename_all = Some(meta.value()?.parse()?);
-                                Ok(())
-                            } else {
-                                Err(meta.error("unrecognized repr"))
-                            }
-                        })?;
-                    }
-                }
-
-                let case_style = match rename_all {
+                let case_style = match container_attributes.rename_all {
                     Some(rename_all) => match rename_all.value().as_str() {
                         "camelCase" => Some(Case::Camel),
                         "snake_case" => Some(Case::Snake),
@@ -888,7 +997,7 @@ fn derive_deserialize_for_derive_input(input: &syn::DeriveInput) -> syn::Result<
         },
         syn::Data::Enum(_) => Err(syn::Error::new_spanned(
             input,
-            "Enum types are not supported for deriving `Deserialize`",
+            "Enum types are only supported for deriving `Deserialize` with `#[shopify_function(serde)]`",
         )),
         syn::Data::Union(_) => Err(syn::Error::new_spanned(
             input,
