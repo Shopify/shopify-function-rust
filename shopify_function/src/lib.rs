@@ -71,5 +71,114 @@ macro_rules! eprintln {
 
 pub use shopify_function_wasm_api as wasm_api;
 
+/// Each `compile_fail` case differs in one way from the first case, which compiles. Stable rustdoc
+/// doesn't check error codes, so the first case is what keeps the others from failing for an
+/// unrelated reason.
+///
+/// ```
+/// # use shopify_function::prelude::*;
+/// # #[typegen("tests/fixtures/prepare_schema.graphql", enums_as_str = ["__TypeKind"], custom_scalar_overrides = {
+/// #     "TargetPrepareResult.variables" => target_run::InputVariables,
+/// # })]
+/// # mod schema {
+/// #     #[query("tests/fixtures/prepare_run.graphql")]
+/// #     pub mod target_run {}
+/// # }
+/// # fn main() {}
+/// fn prepare() -> schema::TargetPrepareResult {
+///     schema::TargetPrepareResult {
+///         variables: schema::target_run::InputVariables {
+///             handle: "tier-a".to_string(),
+///             first: Some(10),
+///         },
+///     }
+/// }
+/// ```
+///
+/// ```compile_fail,E0308
+/// # use shopify_function::prelude::*;
+/// # use shopify_function::scalars::JsonValue;
+/// # use std::collections::BTreeMap;
+/// # #[typegen("tests/fixtures/prepare_schema.graphql", enums_as_str = ["__TypeKind"], custom_scalar_overrides = {
+/// #     "TargetPrepareResult.variables" => target_run::InputVariables,
+/// # })]
+/// # mod schema {
+/// #     #[query("tests/fixtures/prepare_run.graphql")]
+/// #     pub mod target_run {}
+/// # }
+/// # fn main() {}
+/// // A hand-written `JsonValue`.
+/// fn prepare() -> schema::TargetPrepareResult {
+///     schema::TargetPrepareResult {
+///         variables: JsonValue::Object(BTreeMap::from([(
+///             "handle".to_string(),
+///             JsonValue::String("tier-a".to_string()),
+///         )])),
+///     }
+/// }
+/// ```
+///
+/// ```compile_fail,E0063
+/// # use shopify_function::prelude::*;
+/// # #[typegen("tests/fixtures/prepare_schema.graphql", enums_as_str = ["__TypeKind"], custom_scalar_overrides = {
+/// #     "TargetPrepareResult.variables" => target_run::InputVariables,
+/// # })]
+/// # mod schema {
+/// #     #[query("tests/fixtures/prepare_run.graphql")]
+/// #     pub mod target_run {}
+/// # }
+/// # fn main() {}
+/// // `$handle` is declared but not set.
+/// fn prepare() -> schema::TargetPrepareResult {
+///     schema::TargetPrepareResult {
+///         variables: schema::target_run::InputVariables { first: Some(10) },
+///     }
+/// }
+/// ```
+///
+/// ```compile_fail,E0560
+/// # use shopify_function::prelude::*;
+/// # #[typegen("tests/fixtures/prepare_schema.graphql", enums_as_str = ["__TypeKind"], custom_scalar_overrides = {
+/// #     "TargetPrepareResult.variables" => target_run::InputVariables,
+/// # })]
+/// # mod schema {
+/// #     #[query("tests/fixtures/prepare_run.graphql")]
+/// #     pub mod target_run {}
+/// # }
+/// # fn main() {}
+/// // `$tierHandle` is not what the query declares.
+/// fn prepare() -> schema::TargetPrepareResult {
+///     schema::TargetPrepareResult {
+///         variables: schema::target_run::InputVariables {
+///             tier_handle: "tier-a".to_string(),
+///             first: Some(10),
+///         },
+///     }
+/// }
+/// ```
+///
+/// ```compile_fail,E0308
+/// # use shopify_function::prelude::*;
+/// # #[typegen("tests/fixtures/prepare_schema.graphql", enums_as_str = ["__TypeKind"], custom_scalar_overrides = {
+/// #     "TargetPrepareResult.variables" => target_run::InputVariables,
+/// # })]
+/// # mod schema {
+/// #     #[query("tests/fixtures/prepare_run.graphql")]
+/// #     pub mod target_run {}
+/// # }
+/// # fn main() {}
+/// // `$first` is an `Int`.
+/// fn prepare() -> schema::TargetPrepareResult {
+///     schema::TargetPrepareResult {
+///         variables: schema::target_run::InputVariables {
+///             handle: "tier-a".to_string(),
+///             first: Some("10".to_string()),
+///         },
+///     }
+/// }
+/// ```
+#[cfg(doctest)]
+pub struct PrepareVariablesDoctests;
+
 #[cfg(test)]
 mod tests {}

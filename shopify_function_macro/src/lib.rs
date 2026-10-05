@@ -4,6 +4,7 @@ use bluejay_core::{
     definition::{
         EnumTypeDefinition, EnumValueDefinition, InputObjectTypeDefinition, InputValueDefinition,
     },
+    executable::{OperationDefinition, VariableDefinition},
     AsIter,
 };
 use bluejay_typegen_codegen::{
@@ -133,6 +134,9 @@ mod kw {
 /// _enums_as_str_: Optional list of enum names for which the generated code should use string types instead of
 /// a fully formed enum. Defaults to `["LanguageCode", "CountryCode", "CurrencyCode"]`.
 ///
+/// _custom_scalar_overrides_: Map from `"InputObject.field"` to the type to use for that input object field instead of
+/// its custom scalar, such as a prepare result's `variables`. See [variables](#variables).
+///
 /// ### Trait implementations
 ///
 /// By default, will implement `PartialEq`, and `Debug` for all input and enum types. Enums will also implement `Copy`.
@@ -169,6 +173,39 @@ mod kw {
 /// })]
 /// ```
 /// Any type path that does not start with `::` is assumed to be relative to the schema definition module.
+///
+/// ##### Variables
+///
+/// An operation that declares variables also gets a struct for them next to its own in the query module, named
+/// `<Operation>Variables`, or `RootVariables` for an anonymous operation, with a field per variable. A variable that is
+/// non-null with no default is a plain field. Any other variable is an `Option`, where `None` omits it, so the query's
+/// default applies if it has one.
+///
+/// A prepare target returns the variables of the run target it feeds, which the schema types as `JSON`. To type them as
+/// the run query's variables struct instead, override the prepare result's `variables` field with
+/// `custom_scalar_overrides` on `typegen`. For a run query holding `query Input($ruleSetHandle: String) { ... }`:
+/// ```ignore
+/// #[typegen("schema.graphql", custom_scalar_overrides = {
+///     "CartValidationsGeneratePrepareResult.variables" => cart_validations_generate_run::InputVariables,
+/// })]
+/// mod schema {
+///     #[query("src/cart_validations_generate_run.graphql")]
+///     pub mod cart_validations_generate_run {}
+/// }
+///
+/// #[shopify_function]
+/// fn cart_validations_generate_prepare(
+///     input: schema::cart_validations_generate_prepare::Input,
+/// ) -> Result<schema::CartValidationsGeneratePrepareResult> {
+///     Ok(schema::CartValidationsGeneratePrepareResult {
+///         variables: Some(schema::cart_validations_generate_run::InputVariables {
+///             rule_set_handle: Some("rules-default".to_string()),
+///         }),
+///     })
+/// }
+/// ```
+/// Then adding, removing, renaming, or retyping a variable in the run query, or returning a hand-written `JsonValue`,
+/// is a compile error in the prepare target, rather than a run query that resolves nothing.
 ///
 /// ### Naming
 ///
@@ -492,87 +529,13 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
         #[allow(unused_variables)] input_object_type_definition: &impl InputObjectTypeDefinition,
     ) -> Vec<syn::ItemImpl> {
         let name_ident = names::type_ident(input_object_type_definition.name());
-
-        let field_statements: Vec<syn::Stmt> = input_object_type_definition
+        let fields: Vec<(&str, bool)> = input_object_type_definition
             .input_field_definitions()
             .iter()
-            .flat_map(|ivd| {
-                let field_name_ident = names::field_ident(ivd.name());
-                let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
-
-                if ivd.is_required() {
-                    vec![
-                        parse_quote! {
-                            context.write_utf8_str(#field_name_lit_str)?;
-                        },
-                        parse_quote! {
-                            self.#field_name_ident.serialize(context)?;
-                        },
-                    ]
-                } else {
-                    vec![parse_quote! {
-                        if let ::std::option::Option::Some(value) = &self.#field_name_ident {
-                            context.write_utf8_str(#field_name_lit_str)?;
-                            value.serialize(context)?;
-                        }
-                    }]
-                }
-            })
+            .map(|ivd| (ivd.name(), ivd.is_required()))
             .collect();
 
-        let num_required_fields = input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .filter(|ivd| ivd.is_required())
-            .count();
-
-        let optional_field_count_terms: Vec<syn::Expr> = input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .filter(|ivd| !ivd.is_required())
-            .map(|ivd| {
-                let field_name_ident = names::field_ident(ivd.name());
-                parse_quote! { ::std::primitive::usize::from(self.#field_name_ident.is_some()) }
-            })
-            .collect();
-
-        let serialize_impl = parse_quote! {
-            impl shopify_function::wasm_api::Serialize for #name_ident {
-                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
-                    let field_count: ::std::primitive::usize = #num_required_fields #(+ #optional_field_count_terms)*;
-
-                    context.write_object(
-                        |context| {
-                            #(#field_statements)*
-                            ::std::result::Result::Ok(())
-                        },
-                        field_count,
-                    )
-                }
-            }
-        };
-
-        let field_values: Vec<syn::FieldValue> = input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| {
-                let field_name_ident = names::field_ident(ivd.name());
-                let field_name_lit_str = syn::LitStr::new(ivd.name(), Span::mixed_site());
-                parse_quote! { #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))? }
-            })
-            .collect();
-
-        let deserialize_impl = parse_quote! {
-            impl shopify_function::wasm_api::Deserialize for #name_ident {
-                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
-                    ::std::result::Result::Ok(Self {
-                        #(#field_values),*
-                    })
-                }
-            }
-        };
-
-        vec![serialize_impl, deserialize_impl]
+        Self::object_impls(&name_ident, &fields)
     }
 
     fn additional_impls_for_one_of_input_object(
@@ -679,9 +642,116 @@ impl CodeGenerator for ShopifyFunctionCodeGenerator {
             parse_quote! { #[derive(::std::fmt::Debug, ::std::cmp::PartialEq, ::std::clone::Clone)] },
         ]
     }
+
+    fn attributes_for_variables_struct(
+        &self,
+        _operation_definition: &impl OperationDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![
+            parse_quote! { #[derive(::std::fmt::Debug, ::std::cmp::PartialEq, ::std::clone::Clone)] },
+        ]
+    }
+
+    // `Deserialize` is needed by the impls of an input object with a field overridden to this struct.
+    fn additional_impls_for_variables_struct(
+        &self,
+        operation_definition: &impl OperationDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        let operation_definition = operation_definition.as_ref();
+        let name_ident = names::variables_type_ident(operation_definition.name());
+        let fields: Vec<(&str, bool)> = operation_definition
+            .variable_definitions()
+            .map(|variable_definitions| {
+                variable_definitions
+                    .iter()
+                    .map(|vd| (vd.variable(), vd.is_required()))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        Self::object_impls(&name_ident, &fields)
+    }
 }
 
 impl ShopifyFunctionCodeGenerator {
+    /// `Serialize` and `Deserialize` for a struct with a field per `(name, required)` in `fields`, where an optional
+    /// field is an `Option` that is omitted when it is `None`.
+    fn object_impls(name_ident: &syn::Ident, fields: &[(&str, bool)]) -> Vec<syn::ItemImpl> {
+        let field_statements: Vec<syn::Stmt> = fields
+            .iter()
+            .flat_map(|&(name, required)| {
+                let field_name_ident = names::field_ident(name);
+                let field_name_lit_str = syn::LitStr::new(name, Span::mixed_site());
+
+                if required {
+                    vec![
+                        parse_quote! {
+                            context.write_utf8_str(#field_name_lit_str)?;
+                        },
+                        parse_quote! {
+                            self.#field_name_ident.serialize(context)?;
+                        },
+                    ]
+                } else {
+                    vec![parse_quote! {
+                        if let ::std::option::Option::Some(value) = &self.#field_name_ident {
+                            context.write_utf8_str(#field_name_lit_str)?;
+                            value.serialize(context)?;
+                        }
+                    }]
+                }
+            })
+            .collect();
+
+        let num_required_fields = fields.iter().filter(|&&(_, required)| required).count();
+
+        let optional_field_count_terms: Vec<syn::Expr> = fields
+            .iter()
+            .filter(|&&(_, required)| !required)
+            .map(|&(name, _)| {
+                let field_name_ident = names::field_ident(name);
+                parse_quote! { ::std::primitive::usize::from(self.#field_name_ident.is_some()) }
+            })
+            .collect();
+
+        let serialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Serialize for #name_ident {
+                fn serialize(&self, context: &mut shopify_function::wasm_api::Context) -> ::std::result::Result<(), shopify_function::wasm_api::write::Error> {
+                    let field_count: ::std::primitive::usize = #num_required_fields #(+ #optional_field_count_terms)*;
+
+                    context.write_object(
+                        |context| {
+                            #(#field_statements)*
+                            ::std::result::Result::Ok(())
+                        },
+                        field_count,
+                    )
+                }
+            }
+        };
+
+        let field_values: Vec<syn::FieldValue> = fields
+            .iter()
+            .map(|&(name, _)| {
+                let field_name_ident = names::field_ident(name);
+                let field_name_lit_str = syn::LitStr::new(name, Span::mixed_site());
+                parse_quote! { #field_name_ident: shopify_function::wasm_api::Deserialize::deserialize(&value.get_obj_prop(#field_name_lit_str))? }
+            })
+            .collect();
+
+        let deserialize_impl = parse_quote! {
+            impl shopify_function::wasm_api::Deserialize for #name_ident {
+                fn deserialize(value: &shopify_function::wasm_api::Value) -> ::std::result::Result<Self, shopify_function::wasm_api::read::Error> {
+                    ::std::result::Result::Ok(Self {
+                        #(#field_values),*
+                    })
+                }
+            }
+        };
+
+        vec![serialize_impl, deserialize_impl]
+    }
+
     fn type_for_field(
         executable_struct: &ExecutableStruct,
         r#type: &WrappedExecutableType,

@@ -1,6 +1,7 @@
 use std::process;
 
 use shopify_function::prelude::*;
+use shopify_function::scalars::Decimal;
 use shopify_function::Result;
 
 #[allow(dead_code)]
@@ -8,7 +9,9 @@ use shopify_function::Result;
 #[shopify_function(rename_all = "camelCase")]
 struct Configuration {}
 
-#[typegen("./schema.graphql", enums_as_str = ["CountryCode"])]
+#[typegen("./schema.graphql", enums_as_str = ["CountryCode"], custom_scalar_overrides = {
+    "FunctionTargetPrepareResult.variables" => target_run::InputVariables,
+})]
 mod schema {
     #[query("./a.graphql")]
     pub mod target_a {}
@@ -18,6 +21,12 @@ mod schema {
 
     #[query("./cart.graphql")]
     pub mod target_cart {}
+
+    #[query("./prepare.graphql")]
+    pub mod target_prepare {}
+
+    #[query("./run.graphql")]
+    pub mod target_run {}
 }
 
 #[shopify_function]
@@ -60,6 +69,32 @@ fn target_cart(input: schema::target_cart::Input) -> Result<schema::FunctionTarg
         .sum();
 
     Ok(schema::FunctionTargetCartResult { total_quantity })
+}
+
+#[shopify_function]
+fn target_prepare(
+    input: schema::target_prepare::Input,
+) -> Result<schema::FunctionTargetPrepareResult> {
+    let variables = schema::target_run::InputVariables {
+        selector: schema::LineSelector::Filter(schema::LineFilter {
+            titles: Some(vec![input.id().clone()]),
+            r#match: Some(schema::LineMatch::Any),
+            minimum_price: Some(Decimal(1.5)),
+        }),
+        first: Some(10),
+        country: None,
+        minimum_quantity: None,
+        tags: Some(vec![Some("sale".to_string()), None]),
+    };
+
+    Ok(schema::FunctionTargetPrepareResult { variables })
+}
+
+#[shopify_function]
+fn target_run(input: schema::target_run::Input) -> Result<schema::FunctionTargetRunResult> {
+    Ok(schema::FunctionTargetRunResult {
+        line_count: input.matching_lines().len() as i32,
+    })
 }
 
 fn main() {
