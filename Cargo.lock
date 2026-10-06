@@ -112,7 +112,7 @@ checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 [[package]]
 name = "bluejay-core"
 version = "0.4.0"
-source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#2137e8d58c26fd484fa21c31c61bda300b0e1efa"
+source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#4f80e5412338a9e15c4b747a529d4f392c1bb7b8"
 dependencies = [
  "enum-as-inner",
  "itertools",
@@ -123,7 +123,7 @@ dependencies = [
 [[package]]
 name = "bluejay-parser"
 version = "0.4.0"
-source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#2137e8d58c26fd484fa21c31c61bda300b0e1efa"
+source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#4f80e5412338a9e15c4b747a529d4f392c1bb7b8"
 dependencies = [
  "ariadne",
  "bluejay-core",
@@ -136,7 +136,7 @@ dependencies = [
 [[package]]
 name = "bluejay-typegen-codegen"
 version = "0.4.0"
-source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#2137e8d58c26fd484fa21c31c61bda300b0e1efa"
+source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#4f80e5412338a9e15c4b747a529d4f392c1bb7b8"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
@@ -151,7 +151,7 @@ dependencies = [
 [[package]]
 name = "bluejay-validator"
 version = "0.4.0"
-source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#2137e8d58c26fd484fa21c31c61bda300b0e1efa"
+source = "git+https://github.com/Shopify/bluejay?branch=operation-variables#4f80e5412338a9e15c4b747a529d4f392c1bb7b8"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
