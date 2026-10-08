@@ -84,6 +84,79 @@ fn test_one_of_input_object_serialization_writes_active_variant() -> Result<()> 
     Ok(())
 }
 
+#[test]
+fn test_target_prepare_returns_the_variables_run_declares() -> Result<()> {
+    let result = run_function_with_input(
+        target_prepare,
+        r#"
+            {
+                "id": "gid://shopify/CartLine/1"
+            }
+        "#,
+    )?;
+
+    // `None` omits `country` and `minimumQuantity`.
+    assert_eq!(
+        serde_json::json!({
+            "variables": {
+                "selector": {
+                    "filter": {
+                        "titles": ["gid://shopify/CartLine/1"],
+                        "match": "ANY",
+                        "minimumPrice": "1.5"
+                    }
+                },
+                "first": 10,
+                "tags": ["sale", null]
+            }
+        }),
+        serialize_to_json(&result)?
+    );
+    Ok(())
+}
+
+#[test]
+fn test_variables_serialization_omits_none_variables() -> Result<()> {
+    let variables = crate::schema::target_run::InputVariables {
+        selector: crate::schema::LineSelector::Id("gid://shopify/CartLine/1".to_string()),
+        first: None,
+        country: Some("CA".to_string()),
+        minimum_quantity: Some(2),
+        tags: None,
+    };
+
+    assert_eq!(
+        serde_json::json!({
+            "selector": { "id": "gid://shopify/CartLine/1" },
+            "country": "CA",
+            "minimumQuantity": 2
+        }),
+        serialize_to_json(&variables)?
+    );
+    Ok(())
+}
+
+#[test]
+fn test_target_run_counts_matching_lines() -> Result<()> {
+    let result = run_function_with_input(
+        target_run,
+        r#"
+            {
+                "matchingLines": [
+                    { "id": "gid://shopify/CartLine/1" },
+                    { "id": "gid://shopify/CartLine/2" }
+                ]
+            }
+        "#,
+    )?;
+
+    assert_eq!(
+        crate::schema::FunctionTargetRunResult { line_count: 2 },
+        result
+    );
+    Ok(())
+}
+
 fn serialize_to_json<T: Serialize + ?Sized>(value: &T) -> Result<serde_json::Value> {
     let mut context = Context::new_with_input(serde_json::json!({}));
     value.serialize(&mut context)?;
