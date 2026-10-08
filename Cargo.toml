@@ -17,10 +17,3 @@ shopify_function_macro = { version = "=2.2.0", path = "shopify_function_macro" }
 lto = true
 opt-level = 'z'
 strip = true
-
-# Shopify/bluejay#149, which generates the variables structs, stacked on #148, which overrides input fields. Remove once both ship in a release.
-[patch.crates-io]
-bluejay-core = { git = "https://github.com/Shopify/bluejay", branch = "operation-variables" }
-bluejay-parser = { git = "https://github.com/Shopify/bluejay", branch = "operation-variables" }
-bluejay-typegen-codegen = { git = "https://github.com/Shopify/bluejay", branch = "operation-variables" }
-bluejay-validator = { git = "https://github.com/Shopify/bluejay", branch = "operation-variables" }
