@@ -1,0 +1,17 @@
+query Input(
+  $selector: LineSelector!
+  $first: Int
+  $country: CountryCode
+  $minimumQuantity: Int! = 1
+  $tags: [String]
+) {
+  matchingLines(
+    selector: $selector
+    first: $first
+    country: $country
+    minimumQuantity: $minimumQuantity
+    tags: $tags
+  ) {
+    id
+  }
+}

@@ -14,3 +14,11 @@ input_query = "a.graphql"
 target = "test.target-b"
 export = "function_b"
 input_query = "b.graphql"
+
+[[targeting]]
+target = "test.target-prepare"
+input_query = "prepare.graphql"
+
+[[targeting]]
+target = "test.target-run"
+input_query = "run.graphql"

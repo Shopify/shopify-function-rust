@@ -1,0 +1,9 @@
+scalar JSON
+
+type Query {
+  lines(handle: String!, first: Int): [String!]!
+}
+
+input TargetPrepareResult {
+  variables: JSON!
+}

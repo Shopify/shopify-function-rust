@@ -68,6 +68,34 @@ fn test_example_with_targets_target_b() -> Result<()> {
 }
 
 #[test]
+fn test_example_with_targets_target_prepare() -> Result<()> {
+    let path = EXAMPLE_WITH_TARGETS_RESULT
+        .as_ref()
+        .map_err(|e| anyhow::anyhow!("Failed to prepare example: {}", e))?;
+    let input = serde_json::json!({
+        "id": "gid://shopify/CartLine/1"
+    });
+    let result = run_example(path.clone(), "target_prepare", input)?;
+    assert_eq!(
+        result.output,
+        serde_json::json!({
+            "variables": {
+                "selector": {
+                    "filter": {
+                        "titles": ["gid://shopify/CartLine/1"],
+                        "match": "ANY",
+                        "minimumPrice": "1.5"
+                    }
+                },
+                "first": 10,
+                "tags": ["sale", null]
+            }
+        })
+    );
+    Ok(())
+}
+
+#[test]
 fn test_example_with_panic() -> Result<()> {
     let path = EXAMPLE_WITH_TARGETS_RESULT
         .as_ref()
@@ -80,7 +108,7 @@ fn test_example_with_panic() -> Result<()> {
         .unwrap_err()
         .to_string();
     let expected_err =
-        "Function runner returned non-zero exit code: exit status: 1, logs: panicked at example_with_targets/src/main.rs:48:5:\nSomething went wrong\nerror while executing at wasm backtrace:";
+        "Function runner returned non-zero exit code: exit status: 1, logs: panicked at example_with_targets/src/main.rs:57:5:\nSomething went wrong\nerror while executing at wasm backtrace:";
     assert!(
         err.contains(expected_err),
         "Expected error message to contain:\n`{expected_err}`\nbut was:\n`{err}`"

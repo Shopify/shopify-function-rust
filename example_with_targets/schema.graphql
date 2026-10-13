@@ -62,6 +62,11 @@ A void type that can be used to return a null value from a mutation.
 scalar Void
 
 """
+Arbitrary JSON.
+"""
+scalar JSON
+
+"""
 A cart line representing an item in the cart.
 """
 type CartLine {
@@ -87,6 +92,17 @@ type Input {
   optionalArrayOfArrays: [[String!]!]
   optionalArrayOfOptionalArrays: [[String!]]
   cartLines: [CartLine!] @restrictTarget(only: ["test.target-cart"])
+  """
+  The cart lines that match a selector. Its arguments are what `test.target-run` takes as
+  variables from `test.target-prepare`.
+  """
+  matchingLines(
+    selector: LineSelector!
+    first: Int
+    country: CountryCode
+    minimumQuantity: Int! = 1
+    tags: [String]
+  ): [CartLine!]! @restrictTarget(only: ["test.target-run"])
 }
 
 """
@@ -122,6 +138,26 @@ type MutationRoot {
     """
     result: FunctionTargetCartResult!
   ): Void!
+
+  """
+  The function for API target Prepare.
+  """
+  targetPrepare(
+    """
+    The result of calling the function for API target Prepare.
+    """
+    result: FunctionTargetPrepareResult!
+  ): Void!
+
+  """
+  The function for API target Run.
+  """
+  targetRun(
+    """
+    The result of calling the function for API target Run.
+    """
+    result: FunctionTargetRunResult!
+  ): Void!
 }
 
 """
@@ -150,6 +186,42 @@ The result of API target Cart.
 """
 input FunctionTargetCartResult {
   totalQuantity: Int!
+}
+
+"""
+The result of API target Prepare.
+"""
+input FunctionTargetPrepareResult {
+  """
+  The variables for the input query of API target Run.
+  """
+  variables: JSON!
+}
+
+"""
+The result of API target Run.
+"""
+input FunctionTargetRunResult {
+  lineCount: Int!
+}
+
+"""
+Selects cart lines by ID, or by a filter.
+"""
+input LineSelector @oneOf {
+  id: ID
+  filter: LineFilter
+}
+
+input LineFilter {
+  titles: [String!]
+  match: LineMatch! = ALL
+  minimumPrice: Decimal
+}
+
+enum LineMatch {
+  ALL
+  ANY
 }
 
 input Operation @oneOf {
