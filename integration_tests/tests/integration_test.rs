@@ -107,10 +107,19 @@ fn test_example_with_panic() -> Result<()> {
     let err = run_example(path.clone(), "target_panic", input)
         .unwrap_err()
         .to_string();
-    let expected_err =
-        "Function runner returned non-zero exit code: exit status: 1, logs: panicked at example_with_targets/src/main.rs:57:5:\nSomething went wrong\nerror while executing at wasm backtrace:";
+    // `ExitStatus` is displayed differently on Windows, and the panic location
+    // uses the platform's path separator.
+    let exit_status = if cfg!(windows) {
+        "exit code: 1"
+    } else {
+        "exit status: 1"
+    };
+    let sep = std::path::MAIN_SEPARATOR;
+    let expected_err = format!(
+        "Function runner returned non-zero exit code: {exit_status}, logs: panicked at example_with_targets{sep}src{sep}main.rs:57:5:\nSomething went wrong\nerror while executing at wasm backtrace:"
+    );
     assert!(
-        err.contains(expected_err),
+        err.contains(&expected_err),
         "Expected error message to contain:\n`{expected_err}`\nbut was:\n`{err}`"
     );
     Ok(())
