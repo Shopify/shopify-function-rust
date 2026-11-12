@@ -46,7 +46,10 @@ fn build_example(name: &str) -> Result<()> {
 }
 
 static FUNCTION_RUNNER_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|| {
-    let path = workspace_root().join(format!("tmp/function-runner-{FUNCTION_RUNNER_VERSION}"));
+    let path = workspace_root().join(format!(
+        "tmp/function-runner-{FUNCTION_RUNNER_VERSION}{}",
+        std::env::consts::EXE_SUFFIX
+    ));
 
     if !path.exists() {
         std::fs::create_dir_all(workspace_root().join("tmp"))?;
@@ -57,7 +60,10 @@ static FUNCTION_RUNNER_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|
 });
 
 static TRAMPOLINE_PATH: LazyLock<anyhow::Result<PathBuf>> = LazyLock::new(|| {
-    let path = workspace_root().join(format!("tmp/trampoline-{TRAMPOLINE_VERSION}"));
+    let path = workspace_root().join(format!(
+        "tmp/trampoline-{TRAMPOLINE_VERSION}{}",
+        std::env::consts::EXE_SUFFIX
+    ));
     if !path.exists() {
         std::fs::create_dir_all(workspace_root().join("tmp"))?;
         download_trampoline(&path)?;
