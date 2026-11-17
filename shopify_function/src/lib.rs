@@ -19,6 +19,9 @@
 //!     /* ... */
 //! }
 //! ```
+//!
+//! For types that are easier to express with [`serde`], such as simple enums, add
+//! `#[shopify_function(serde)]` to the type. See the [`serde_adapter`] module for more details.
 
 #[cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p1"))]
 compile_error!("Compiling to wasm32-wasip1 is unsupported, change your target to wasm32-unknown-unknown instead");
@@ -26,6 +29,7 @@ compile_error!("Compiling to wasm32-wasip1 is unsupported, change your target to
 pub use shopify_function_macro::{shopify_function, typegen, Deserialize};
 
 pub mod scalars;
+pub mod serde_adapter;
 
 pub mod prelude {
     #[allow(deprecated)]
